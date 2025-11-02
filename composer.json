@@ -1,10 +1,10 @@
 {
-    "name": "azuriom/inspiratostats",
+    "name": "inspirato/social-profile",
     "type": "azuriom-plugin",
-    "description": "Plugin for Azuriom",
+    "description": "Social profile and stats plugin for Azuriom.",
     "autoload": {
         "psr-4": {
-            "Azuriom\\Plugin\\InspiratoStats\\": "src/"
+            "Azuriom\\Plugin\\SocialProfile\\": "src/"
         }
     },
     "replace": {

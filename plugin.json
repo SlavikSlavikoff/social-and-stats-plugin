@@ -1,15 +1,15 @@
 {
-    "id": "inspiratostats",
-    "name": "InspiratoStats",
-    "description": "Plugin for Azuriom",
+    "id": "socialprofile",
+    "name": "Social Profile",
+    "description": "Extended community metrics and API for Inspirato.",
     "version": "1.0.0",
-    "url": "https://azuriom.com",
+    "url": "https://inspirato.example",
     "authors": [
-        "Azuriom"
+        "Inspirato Team"
     ],
     "azuriom_api": "1.1.0",
     "providers": [
-        "\\Azuriom\\Plugin\\InspiratoStats\\Providers\\InspiratoStatsServiceProvider",
-        "\\Azuriom\\Plugin\\InspiratoStats\\Providers\\RouteServiceProvider"
+        "\\Azuriom\\Plugin\\SocialProfile\\Providers\\SocialProfileServiceProvider",
+        "\\Azuriom\\Plugin\\SocialProfile\\Providers\\RouteServiceProvider"
     ]
 }
