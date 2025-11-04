@@ -1,0 +1,89 @@
+.socialprofile-container {
+    padding: 2rem 0;
+}
+
+.socialprofile-card {
+    background: rgba(17, 25, 40, 0.75);
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+    color: #f8fafc;
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.socialprofile-card .card-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.socialprofile-card .avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 16px;
+    object-fit: cover;
+    box-shadow: 0 15px 30px rgba(15, 23, 42, 0.2);
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.metric-grid div {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.metric-label {
+    display: block;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    color: rgba(226, 232, 240, 0.7);
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.socialprofile-admin .socialprofile-card {
+    margin-bottom: 1.5rem;
+}
+
+.token-scope-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.5rem 1rem;
+}
+
+.token-scope-grid .form-check {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.75rem;
+    border-radius: 12px;
+}
+
+.table thead th {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: rgba(148, 163, 184, 0.9);
+}
+
+.table tbody td {
+    color: #e2e8f0;
+}
+
+.alert {
+    border-radius: 12px;
+}
+
+.badge {
+    border-radius: 999px;
+}
