@@ -4,15 +4,26 @@ namespace Azuriom\Plugin\InspiratoStats\Providers;
 
 use Azuriom\Extensions\Plugin\BasePluginServiceProvider;
 use Azuriom\Models\Permission;
+use Azuriom\Models\Role;
+use Azuriom\Models\User;
+use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
+use Azuriom\Plugin\InspiratoStats\Models\ApiToken;
+use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
+use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
+use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
+use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
-use Azuriom\Plugin\InspiratoStats\Models\ApiToken;
 
 class SocialProfileServiceProvider extends BasePluginServiceProvider
 {
+    private const BASELINE_CACHE_KEY = 'socialprofile.seed.version';
+    private const BASELINE_VERSION = 1;
+
     /**
      * Register any plugin services.
      */
@@ -34,6 +45,8 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
         $this->registerAdminNavigation();
         $this->registerUserNavigation();
         $this->registerRateLimiters();
+        $this->initializeUserRecords();
+        $this->registerRoleListener();
     }
 
     /**
@@ -56,36 +69,36 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
      */
     protected function adminNavigation(): array
     {
-        return [
-            'dashboard' => [
+        $items = [
+            'socialprofile.admin.dashboard' => [
                 'name' => __('socialprofile::messages.admin.nav.dashboard'),
-                'route' => 'socialprofile.admin.dashboard',
-                'icon' => 'fas fa-chart-network',
                 'permission' => 'social.view',
             ],
-            'users' => [
+            'socialprofile.admin.users.index' => [
                 'name' => __('socialprofile::messages.admin.nav.users'),
-                'route' => 'socialprofile.admin.users.index',
-                'icon' => 'fas fa-users',
                 'permission' => 'social.edit',
             ],
-            'violations' => [
+            'socialprofile.admin.violations.index' => [
                 'name' => __('socialprofile::messages.admin.nav.violations'),
-                'route' => 'socialprofile.admin.violations.index',
-                'icon' => 'fas fa-exclamation-triangle',
                 'permission' => 'social.moderate_violations',
             ],
-            'tokens' => [
+            'socialprofile.admin.tokens.index' => [
                 'name' => __('socialprofile::messages.admin.nav.tokens'),
-                'route' => 'socialprofile.admin.tokens.index',
-                'icon' => 'fas fa-key',
                 'permission' => 'social.manage_tokens',
             ],
-            'settings' => [
+            'socialprofile.admin.settings.edit' => [
                 'name' => __('socialprofile::messages.admin.nav.settings'),
-                'route' => 'socialprofile.admin.settings.edit',
-                'icon' => 'fas fa-sliders-h',
                 'permission' => 'social.edit',
+            ],
+        ];
+
+        return [
+            'socialprofile-menu' => [
+                'name' => __('socialprofile::messages.admin.nav.menu'),
+                'route' => 'socialprofile.admin.dashboard',
+                'icon' => 'fas fa-users-cog',
+                'type' => 'dropdown',
+                'items' => $items,
             ],
         ];
     }
@@ -122,7 +135,6 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
             'social.grant_trust' => __('socialprofile::messages.permissions.grant_trust'),
             'social.manage_tokens' => __('socialprofile::messages.permissions.manage_tokens'),
             'social.moderate_violations' => __('socialprofile::messages.permissions.moderate_violations'),
-            'social.verify_accounts' => __('socialprofile::messages.permissions.verify_accounts'),
         ];
 
         Permission::registerPermissions($permissions);
@@ -146,6 +158,49 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
             $perMinute = (int) ($limitConfig['per_minute'] ?? setting('socialprofile_token_rate_limit', 120));
 
             return Limit::perMinute($perMinute)->by($key);
+        });
+    }
+
+    protected function initializeUserRecords(): void
+    {
+        User::created(function (User $user) {
+            self::ensureDefaultMetrics($user);
+        });
+
+        if (Cache::get(self::BASELINE_CACHE_KEY) === self::BASELINE_VERSION) {
+            return;
+        }
+
+        User::chunk(200, function ($users) {
+            foreach ($users as $user) {
+                self::ensureDefaultMetrics($user);
+            }
+        });
+
+        Cache::forever(self::BASELINE_CACHE_KEY, self::BASELINE_VERSION);
+    }
+
+    protected static function ensureDefaultMetrics(User $user): void
+    {
+        SocialScore::firstOrCreate(['user_id' => $user->id]);
+        ActivityPoint::firstOrCreate(['user_id' => $user->id]);
+        CoinBalance::firstOrCreate(['user_id' => $user->id]);
+        GameStatistic::firstOrCreate(['user_id' => $user->id]);
+        TrustLevel::firstOrCreate(['user_id' => $user->id]);
+    }
+
+    protected function registerRoleListener(): void
+    {
+        Role::updated(function (Role $role) {
+            // TODO:
+            // - Сделать конфигурацию переходов ролей наподобие:
+            //   [
+            //     ['from' => ['X'], 'to' => ['Y'], 'action' => 'whitelist_add'],
+            //     ['from' => ['*'], 'to' => ['Z'], 'action' => 'auto_ban'],
+            //     ['from' => ['Y'], 'to' => ['X'], 'action' => 'whitelist_remove'],
+            //   ]
+            // - Поддержать перечисление ID через запятую и wildcard '*'.
+            // - На основе конфигурации выполнять автоматизацию (вайтлист, бан и т. п.).
         });
     }
 }

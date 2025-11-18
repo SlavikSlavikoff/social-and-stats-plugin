@@ -105,22 +105,6 @@ return new class extends Migration
             });
         }
 
-        $this->dropIfForeignKeysIncompatible('socialprofile_verifications', ['user_id']);
-
-        if (! Schema::hasTable('socialprofile_verifications')) {
-            Schema::create('socialprofile_verifications', function (Blueprint $table) {
-                $table->id();
-                $table->unsignedInteger('user_id')->unique();
-                $table->enum('status', ['unverified', 'pending', 'verified', 'rejected'])->default('unverified');
-                $table->string('method')->nullable();
-                $table->json('meta')->nullable();
-                $table->timestamps();
-                $table->softDeletes();
-
-                $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-            });
-        }
-
         $this->dropIfForeignKeysIncompatible('socialprofile_api_tokens', ['created_by']);
 
         if (! Schema::hasTable('socialprofile_api_tokens')) {
@@ -145,7 +129,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('socialprofile_api_tokens');
-        Schema::dropIfExists('socialprofile_verifications');
         Schema::dropIfExists('socialprofile_violations');
         Schema::dropIfExists('socialprofile_trust_levels');
         Schema::dropIfExists('socialprofile_game_statistics');

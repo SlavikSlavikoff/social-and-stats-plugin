@@ -8,7 +8,6 @@ use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
 use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
 use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
 use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
-use Azuriom\Plugin\InspiratoStats\Models\Verification;
 use Illuminate\Http\Request;
 
 class BundleController extends ApiController
@@ -25,7 +24,6 @@ class BundleController extends ApiController
             'coins' => CoinBalance::firstOrCreate(['user_id' => $user->id]),
             'trust' => TrustLevel::firstOrCreate(['user_id' => $user->id]),
             'stats' => GameStatistic::firstOrCreate(['user_id' => $user->id]),
-            'verification' => Verification::firstOrCreate(['user_id' => $user->id]),
         ];
 
         return $this->resourceResponse(BundleResource::makeWithAccess($data, $context->hasFullAccess));

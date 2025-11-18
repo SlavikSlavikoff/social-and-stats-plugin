@@ -8,17 +8,14 @@ use Azuriom\Plugin\InspiratoStats\Events\ActivityChanged;
 use Azuriom\Plugin\InspiratoStats\Events\CoinsChanged;
 use Azuriom\Plugin\InspiratoStats\Events\SocialStatsUpdated;
 use Azuriom\Plugin\InspiratoStats\Events\TrustLevelChanged;
-use Azuriom\Plugin\InspiratoStats\Events\VerificationChanged;
 use Azuriom\Plugin\InspiratoStats\Events\ViolationAdded;
 use Azuriom\Plugin\InspiratoStats\Http\Requests\StoreViolationRequest;
 use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateTrustLevelRequest;
-use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateVerificationRequest;
 use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
 use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
 use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
 use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
 use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
-use Azuriom\Plugin\InspiratoStats\Models\Verification;
 use Azuriom\Plugin\InspiratoStats\Models\Violation;
 use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\Request;
@@ -58,7 +55,6 @@ class UsersController extends Controller
         $coins = CoinBalance::firstOrCreate(['user_id' => $user->id]);
         $stats = GameStatistic::firstOrCreate(['user_id' => $user->id]);
         $trust = TrustLevel::firstOrCreate(['user_id' => $user->id]);
-        $verification = Verification::firstOrCreate(['user_id' => $user->id]);
         $violations = Violation::where('user_id', $user->id)->latest()->get();
 
         return view('socialprofile::admin.users.show', compact(
@@ -68,7 +64,6 @@ class UsersController extends Controller
             'coins',
             'stats',
             'trust',
-            'verification',
             'violations'
         ) + [
             'trustLevels' => TrustLevel::LEVELS,
@@ -135,23 +130,6 @@ class UsersController extends Controller
             'user_id' => $user->id,
             'actor_id' => auth()->id(),
             'level' => $trust->level,
-        ]);
-
-        return redirect()->route('socialprofile.admin.users.show', $user)->with('status', __('socialprofile::messages.admin.users.updated'));
-    }
-
-    public function updateVerification(UpdateVerificationRequest $request, User $user)
-    {
-        $verification = Verification::firstOrCreate(['user_id' => $user->id]);
-        $verification->fill($request->validated());
-        $verification->save();
-
-        event(new VerificationChanged($user, $verification));
-
-        ActionLogger::log('socialprofile.admin.verification.updated', [
-            'user_id' => $user->id,
-            'actor_id' => auth()->id(),
-            'status' => $verification->status,
         ]);
 
         return redirect()->route('socialprofile.admin.users.show', $user)->with('status', __('socialprofile::messages.admin.users.updated'));

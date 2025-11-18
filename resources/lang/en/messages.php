@@ -6,15 +6,6 @@ return [
         'menu' => 'My Progress',
         'identity' => 'Identity',
         'statistics' => 'Statistics',
-        'verification' => 'Verification',
-        'verification_status' => [
-            'unverified' => 'Unverified',
-            'pending' => 'Pending review',
-            'verified' => 'Verified',
-            'rejected' => 'Rejected',
-        ],
-        'verification_status_label' => 'Verification status',
-        'method' => 'Method',
         'recent_violations' => 'Recent violations',
         'no_violations' => 'No violations recorded',
         'type' => 'Type',
@@ -43,6 +34,7 @@ return [
     ],
     'admin' => [
         'nav' => [
+            'menu' => 'Social menu',
             'dashboard' => 'Dashboard',
             'users' => 'Users',
             'violations' => 'Violations',
@@ -54,9 +46,7 @@ return [
             'top_scores' => 'Top social scores',
             'top_activity' => 'Top activity',
             'recent_violations' => 'Latest violations',
-            'pending_verifications' => 'Pending verifications',
             'no_violations' => 'No violations recorded recently',
-            'no_pending' => 'All verifications processed',
         ],
         'users' => [
             'title' => 'Users',
@@ -71,7 +61,6 @@ return [
             'trust_title' => 'Trust level',
             'note' => 'Staff note',
             'permission_required' => 'You do not have permission to edit this section.',
-            'verification_title' => 'Verification status',
             'violations_history' => 'Violations history',
             'add_violation' => 'Add violation',
             'evidence' => 'Evidence URL',
@@ -125,7 +114,6 @@ return [
         'grant_trust' => 'Manage trust levels',
         'manage_tokens' => 'Manage API tokens',
         'moderate_violations' => 'Moderate violations',
-        'verify_accounts' => 'Manage verifications',
     ],
     'trust' => [
         'levels' => [

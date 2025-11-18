@@ -51,7 +51,6 @@ abstract class TestCase extends BaseTestCase
             'social.grant_trust' => 'Manage trust levels',
             'social.manage_tokens' => 'Manage social tokens',
             'social.moderate_violations' => 'Moderate violations',
-            'social.verify_accounts' => 'Verify accounts',
         ];
 
         foreach ($permissions as $permission => $description) {

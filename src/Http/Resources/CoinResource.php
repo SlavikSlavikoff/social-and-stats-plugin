@@ -21,7 +21,7 @@ class CoinResource extends JsonResource
 
     public function toArray($request): array
     {
-        // Public callers must respect the visibility flag and verification status.
+        // Public callers must respect the visibility flag.
         $canViewBalance = $this->fullAccess || $this->canViewBalance;
 
         $data = [

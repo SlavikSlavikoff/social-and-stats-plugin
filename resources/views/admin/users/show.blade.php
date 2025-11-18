@@ -115,29 +115,6 @@
                     <p class="text-muted mb-0">{{ __('socialprofile::messages.admin.users.permission_required') }}</p>
                 @endcan
             </div>
-            <div class="socialprofile-card">
-                <h3>{{ __('socialprofile::messages.admin.users.verification_title') }}</h3>
-                @can('social.verify_accounts')
-                <form method="POST" action="{{ route('socialprofile.admin.users.verification.update', $user) }}">
-                    @csrf
-                    <div class="mb-3">
-                        <label class="form-label">{{ __('socialprofile::messages.profile.verification_status_label') }}</label>
-                        <select name="status" class="form-select">
-                            @foreach(['unverified','pending','verified','rejected'] as $status)
-                                <option value="{{ $status }}" @selected($verification->status === $status)>{{ __('socialprofile::messages.profile.verification_status.' . $status) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ __('socialprofile::messages.profile.method') }}</label>
-                        <input type="text" name="method" class="form-control" value="{{ old('method', $verification->method) }}">
-                    </div>
-                    <button class="btn btn-primary" type="submit">{{ __('socialprofile::messages.admin.users.save') }}</button>
-                </form>
-                @else
-                    <p class="text-muted mb-0">{{ __('socialprofile::messages.admin.users.permission_required') }}</p>
-                @endcan
-            </div>
         </div>
     </div>
 

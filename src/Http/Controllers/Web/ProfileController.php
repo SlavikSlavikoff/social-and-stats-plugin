@@ -8,7 +8,6 @@ use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
 use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
 use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
 use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
-use Azuriom\Plugin\InspiratoStats\Models\Verification;
 use Azuriom\Plugin\InspiratoStats\Models\Violation;
 
 class ProfileController extends Controller
@@ -24,7 +23,6 @@ class ProfileController extends Controller
         $coins = CoinBalance::firstOrCreate(['user_id' => $user->id]);
         $stats = GameStatistic::firstOrCreate(['user_id' => $user->id]);
         $trust = TrustLevel::firstOrCreate(['user_id' => $user->id]);
-        $verification = Verification::firstOrCreate(['user_id' => $user->id]);
         $violations = Violation::where('user_id', $user->id)->latest()->limit(10)->get();
 
         return view('socialprofile::profile', [
@@ -34,7 +32,6 @@ class ProfileController extends Controller
             'coins' => $coins,
             'stats' => $stats,
             'trust' => $trust,
-            'verification' => $verification,
             'violations' => $violations,
         ]);
     }

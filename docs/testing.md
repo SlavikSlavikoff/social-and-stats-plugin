@@ -1,6 +1,6 @@
 # Social Profile Plugin – Testing Guide
 
-This plugin ships with an isolated PHPUnit test suite, integration smoke scripts, and manual verification steps. Follow the checklist below before releasing a new build.
+This plugin ships with an isolated PHPUnit test suite, integration smoke scripts, and manual QA steps. Follow the checklist below before releasing a new build.
 
 ## 1. PHP Unit/Feature tests
 
@@ -15,8 +15,8 @@ What the suite covers:
 
 - Database schema integrity for every `socialprofile_*` table.
 - `ApiToken` behaviours (scope wildcards, IP restrictions, bearer parsing).
-- API middleware: scope/IP validation, optional HMAC verification, rate limiters, bundle/coins visibility rules.
-- Admin UI flows (metrics edit, trust/verification, violation logging, token CRUD, settings form).
+- API middleware: scope/IP validation, optional HMAC signature, rate limiters, bundle/coins visibility rules.
+- Admin UI flows (metrics edit, trust management, violation logging, token CRUD, settings form).
 
 ## 2. Python smoke test
 
@@ -65,8 +65,8 @@ Import `docs/socialprofile.postman_collection.json` (uses variables `base_url`, 
 
 ## 5. Manual UI checklist
 
-1. **Admin → Social Dashboard** – cards show top scores/activity, pending verifications.
-2. **Admin → Users** – search, metric edit form, trust/verification tabs, violation log creation.
+1. **Admin → Social Dashboard** – cards show top scores/activity и блок последних нарушений.
+2. **Admin → Users** – search, metric edit form, trust block, violation log creation.
 3. **Admin → Tokens** – creation form generates plaintext token once, rotate/delete actions.
 4. **Admin → Settings** – rate limit inputs, visibility checkboxes, HMAC toggle with secret; toggles immediately apply to the API.
 5. **User profile (/account/social)** – widgets load without console errors, localized labels.

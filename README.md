@@ -47,7 +47,6 @@ composer dump-autoload
 | `socialprofile_game_statistics` | `user_id`, `played_minutes`, `kills`, `deaths`, `extra_metrics` (JSON) | Гибкие метрики игры. |
 | `socialprofile_trust_levels` | `user_id`, `level`, `granted_by`, `note` | Поддерживает `softDeletes`, enum уровней `newbie`→`staff`. |
 | `socialprofile_violations` | `user_id`, `type`, `reason`, `points`, `issued_by`, `evidence_url` | `softDeletes`, индекс по `user_id/created_at`. |
-| `socialprofile_verifications` | `user_id`, `status`, `method`, `meta` | `softDeletes`, хранит произвольные данные проверки. |
 | `socialprofile_api_tokens` | `name`, `token_hash(sha256)`, `scopes` (JSON), `allowed_ips`, `rate_limit`, `created_by` | Используется для защиты API. |
 
 ## Настройки панели управления
@@ -69,7 +68,6 @@ composer dump-autoload
 | `social.grant_trust` | Изменение уровней доверия. |
 | `social.manage_tokens` | Управление API‑токенами. |
 | `social.moderate_violations` | Создание/удаление нарушений. |
-| `social.verify_accounts` | Одобрение/отклонение верификаций. |
 
 ## Маршруты
 
@@ -89,7 +87,6 @@ composer dump-autoload
 | `socialprofile.admin.users.show` | GET | `/users/{user}` | `social.edit` | Карточка пользователя и метрики. |
 | `socialprofile.admin.users.metrics.update` | POST | `/users/{user}/metrics` | `social.edit` | Обновление очков, активности, монет и статистики. |
 | `socialprofile.admin.users.trust.update` | POST | `/users/{user}/trust` | `social.grant_trust` | Смена уровня доверия. |
-| `socialprofile.admin.users.verification.update` | POST | `/users/{user}/verification` | `social.verify_accounts` | Управление статусом верификации. |
 | `socialprofile.admin.users.violations.store` | POST | `/users/{user}/violations` | `social.moderate_violations` | Добавление нарушения из профиля. |
 | `socialprofile.admin.violations.index` | GET | `/violations` | `social.moderate_violations` | Список всех нарушений. |
 | `socialprofile.admin.violations.store` | POST | `/violations` | `social.moderate_violations` | Создание нарушения по ID пользователя. |
@@ -119,8 +116,6 @@ composer dump-autoload
 | `/user/{nickname}/violations` | GET | `violations:read` | `socialprofile-public` | Требует полного доступа; возвращает коллекцию нарушений. |
 | `/user/{nickname}/violations` | POST | `violations:write` | `socialprofile-token` | Создает нарушение (разрешение `social.moderate_violations`). |
 | `/user/{nickname}/bundle` | GET | `bundle:read` | `socialprofile-public` | Консолидированный payload для профиля (монеты и расширенные поля только при доступе). |
-| `/user/{nickname}/verification` | GET | `verify:read` | `socialprofile-public` | Статус верификации (детали только при полном доступе). |
-| `/user/{nickname}/verification` | PUT | `verify:write` | `socialprofile-token` | Обновляет статус (разрешение `social.verify_accounts`) и шлет `VerificationChanged`. |
 
 > Ник (`{nickname}`) ищется по `config('auth.providers.users.field', 'name')`, поэтому можно переключить поиск на `uuid`, установив соответствующую опцию в ядре.
 
@@ -146,7 +141,6 @@ composer dump-autoload
 | `score:read` / `score:write` | GET / PUT `/user/{nickname}/social-score` | Социальный рейтинг. |
 | `trust:read` / `trust:write` | GET / PUT `/user/{nickname}/trust-level` | Уровни доверия. |
 | `violations:read` / `violations:write` | GET / POST `/user/{nickname}/violations` | История и создание нарушений. |
-| `verify:read` / `verify:write` | GET / PUT `/user/{nickname}/verification` | Процесс верификации. |
 | `bundle:read` | GET `/user/{nickname}/bundle` | Компактный профиль для сторонних сервисов. |
 
 Метод `ApiToken::allowsScope()` понимает `*` для полного доступа или форму `<домен>:*` (например, `coins:*`). Используйте их для упрощения конфигурации сервисов.
@@ -185,7 +179,6 @@ curl -X PUT https://example.com/api/social/v1/user/Aurora/coins \
 - `CoinsChanged(User $user, CoinBalance $coins)` — изменен баланс монет.
 - `TrustLevelChanged(User $user, TrustLevel $trust, ?User $actor)` — обновлен уровень доверия.
 - `ViolationAdded(User $user, Violation $violation)` — создано нарушение.
-- `VerificationChanged(User $user, Verification $verification)` — обновлен статус верификации.
 
 Подписывайтесь на события для публикации изменений в очереди, вебхуки и т.п.
 

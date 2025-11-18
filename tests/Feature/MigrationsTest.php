@@ -16,7 +16,6 @@ class MigrationsTest extends TestCase
             'socialprofile_game_statistics' => ['user_id', 'played_minutes', 'kills', 'deaths', 'extra_metrics'],
             'socialprofile_trust_levels' => ['user_id', 'level', 'granted_by', 'note', 'deleted_at'],
             'socialprofile_violations' => ['user_id', 'type', 'reason', 'points', 'issued_by', 'evidence_url', 'deleted_at'],
-            'socialprofile_verifications' => ['user_id', 'status', 'method', 'meta', 'deleted_at'],
             'socialprofile_api_tokens' => ['name', 'token_hash', 'scopes', 'allowed_ips', 'rate_limit', 'created_by'],
         ];
 

@@ -16,7 +16,6 @@
                     <img src="{{ method_exists($user, 'getAvatar') ? $user->getAvatar() : $user->avatar_url ?? 'https://via.placeholder.com/96' }}" class="avatar me-3" alt="{{ $user->name }}">
                     <div>
                         <h3 class="mb-1">{{ $user->name }}</h3>
-                        <p class="mb-0 text-muted">{{ __('socialprofile::messages.profile.verification_status.'. $verification->status) }}</p>
                     </div>
                 </div>
             </div>
@@ -31,7 +30,7 @@
                     <span class="metric-label">{{ __('socialprofile::messages.metrics.activity') }}</span>
                     <span class="metric-value">{{ $activity->points }}</span>
                 </div>
-                @php($canSeeCoins = $verification->status === 'verified' || auth()->user()?->can('social.edit'))
+                @php($canSeeCoins = true)
                 <div>
                     <span class="metric-label">{{ __('socialprofile::messages.metrics.coins') }}</span>
                     <span class="metric-value">{{ $canSeeCoins ? number_format($coins->balance, 2) : '—' }}</span>
@@ -53,15 +52,6 @@
                     <li>{{ __('socialprofile::messages.metrics.kills') }}: <strong>{{ $stats->kills }}</strong></li>
                     <li>{{ __('socialprofile::messages.metrics.deaths') }}: <strong>{{ $stats->deaths }}</strong></li>
                 </ul>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="socialprofile-card">
-                <h3>{{ __('socialprofile::messages.profile.verification') }}</h3>
-                <p class="mb-2">{{ __('socialprofile::messages.profile.verification_status.'. $verification->status) }}</p>
-                @if($verification->method)
-                    <p class="text-muted">{{ __('socialprofile::messages.profile.method') }}: {{ $verification->method }}</p>
-                @endif
             </div>
         </div>
     </div>

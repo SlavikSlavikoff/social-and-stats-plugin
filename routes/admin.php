@@ -27,10 +27,6 @@ Route::post('/users/{user}/trust', [UsersController::class, 'updateTrust'])
     ->middleware('can:social.grant_trust')
     ->name('users.trust.update');
 
-Route::post('/users/{user}/verification', [UsersController::class, 'updateVerification'])
-    ->middleware('can:social.verify_accounts')
-    ->name('users.verification.update');
-
 Route::post('/users/{user}/violations', [UsersController::class, 'storeViolation'])
     ->middleware('can:social.moderate_violations')
     ->name('users.violations.store');

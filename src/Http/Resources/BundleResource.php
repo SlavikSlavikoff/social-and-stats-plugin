@@ -26,9 +26,6 @@ class BundleResource extends JsonResource
             'skin_url' => method_exists($user, 'getAvatar') ? $user->getAvatar() : null,
         ];
 
-        $verification = $this->resource['verification'];
-        $isVerified = $verification?->status === 'verified';
-
         $showCoinsPublic = (bool) setting('socialprofile_show_coins_public', true);
 
         $data = [
@@ -42,13 +39,9 @@ class BundleResource extends JsonResource
             'statistics' => [
                 'played_minutes' => (int) ($this->resource['stats']?->played_minutes ?? 0),
             ],
-            'verification' => [
-                'status' => $verification?->status ?? 'unverified',
-                'is_verified' => $isVerified,
-            ],
         ];
 
-        if ($this->fullAccess || ($showCoinsPublic && $isVerified)) {
+        if ($this->fullAccess || $showCoinsPublic) {
             $data['coins'] = (float) ($this->resource['coins']?->balance ?? 0);
         }
 
@@ -57,8 +50,6 @@ class BundleResource extends JsonResource
             $data['statistics']['kills'] = (int) ($this->resource['stats']?->kills ?? 0);
             $data['statistics']['deaths'] = (int) ($this->resource['stats']?->deaths ?? 0);
             $data['statistics']['extra_metrics'] = $this->resource['stats']?->extra_metrics;
-            $data['verification']['method'] = $verification?->method;
-            $data['verification']['meta'] = $verification?->meta;
         }
 
         return $data;

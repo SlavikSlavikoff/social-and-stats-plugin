@@ -6,10 +6,8 @@ use Azuriom\Plugin\InspiratoStats\Events\ActivityChanged;
 use Azuriom\Plugin\InspiratoStats\Events\CoinsChanged;
 use Azuriom\Plugin\InspiratoStats\Events\SocialStatsUpdated;
 use Azuriom\Plugin\InspiratoStats\Events\TrustLevelChanged;
-use Azuriom\Plugin\InspiratoStats\Events\VerificationChanged;
 use Azuriom\Plugin\InspiratoStats\Events\ViolationAdded;
 use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
-use Azuriom\Plugin\InspiratoStats\Models\Verification;
 use Azuriom\Plugin\InspiratoStats\Tests\TestCase;
 use Illuminate\Support\Facades\Event;
 
@@ -43,9 +41,9 @@ class UsersTest extends TestCase
         Event::assertDispatched(CoinsChanged::class);
     }
 
-    public function test_admin_can_manage_trust_and_verification(): void
+    public function test_admin_can_manage_trust(): void
     {
-        Event::fake([TrustLevelChanged::class, VerificationChanged::class]);
+        Event::fake([TrustLevelChanged::class]);
 
         $admin = $this->createAdminUser();
         $user = $this->createBasicUser();
@@ -57,15 +55,6 @@ class UsersTest extends TestCase
 
         Event::assertDispatched(TrustLevelChanged::class);
         $this->assertEquals('Promoted', TrustLevel::firstWhere('user_id', $user->id)?->note);
-
-        $this->actingAs($admin)->post("/admin/socialprofile/users/{$user->id}/verification", [
-            'status' => 'verified',
-            'method' => 'manual',
-            'meta' => ['reviewed_by' => 'admin'],
-        ])->assertRedirect();
-
-        Event::assertDispatched(VerificationChanged::class);
-        $this->assertEquals('verified', Verification::firstWhere('user_id', $user->id)?->status);
     }
 
     public function test_admin_can_record_violations(): void
