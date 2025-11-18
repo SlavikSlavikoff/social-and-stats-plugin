@@ -1,6 +1,6 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Resources;
+namespace Azuriom\Plugin\InspiratoStats\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 

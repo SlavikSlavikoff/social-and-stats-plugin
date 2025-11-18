@@ -1,14 +1,14 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Api;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Api;
 
-use Azuriom\Plugin\SocialProfile\Http\Resources\BundleResource;
-use Azuriom\Plugin\SocialProfile\Models\ActivityPoint;
-use Azuriom\Plugin\SocialProfile\Models\CoinBalance;
-use Azuriom\Plugin\SocialProfile\Models\GameStatistic;
-use Azuriom\Plugin\SocialProfile\Models\SocialScore;
-use Azuriom\Plugin\SocialProfile\Models\TrustLevel;
-use Azuriom\Plugin\SocialProfile\Models\Verification;
+use Azuriom\Plugin\InspiratoStats\Http\Resources\BundleResource;
+use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
+use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
+use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
+use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
+use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
+use Azuriom\Plugin\InspiratoStats\Models\Verification;
 use Illuminate\Http\Request;
 
 class BundleController extends ApiController

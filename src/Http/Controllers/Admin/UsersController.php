@@ -1,25 +1,26 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Admin;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin;
 
 use Azuriom\Http\Controllers\Controller;
 use Azuriom\Models\User;
-use Azuriom\Plugin\SocialProfile\Events\ActivityChanged;
-use Azuriom\Plugin\SocialProfile\Events\CoinsChanged;
-use Azuriom\Plugin\SocialProfile\Events\SocialStatsUpdated;
-use Azuriom\Plugin\SocialProfile\Events\TrustLevelChanged;
-use Azuriom\Plugin\SocialProfile\Events\VerificationChanged;
-use Azuriom\Plugin\SocialProfile\Events\ViolationAdded;
-use Azuriom\Plugin\SocialProfile\Http\Requests\StoreViolationRequest;
-use Azuriom\Plugin\SocialProfile\Http\Requests\UpdateTrustLevelRequest;
-use Azuriom\Plugin\SocialProfile\Http\Requests\UpdateVerificationRequest;
-use Azuriom\Plugin\SocialProfile\Models\ActivityPoint;
-use Azuriom\Plugin\SocialProfile\Models\CoinBalance;
-use Azuriom\Plugin\SocialProfile\Models\GameStatistic;
-use Azuriom\Plugin\SocialProfile\Models\SocialScore;
-use Azuriom\Plugin\SocialProfile\Models\TrustLevel;
-use Azuriom\Plugin\SocialProfile\Models\Verification;
-use Azuriom\Plugin\SocialProfile\Models\Violation;
+use Azuriom\Plugin\InspiratoStats\Events\ActivityChanged;
+use Azuriom\Plugin\InspiratoStats\Events\CoinsChanged;
+use Azuriom\Plugin\InspiratoStats\Events\SocialStatsUpdated;
+use Azuriom\Plugin\InspiratoStats\Events\TrustLevelChanged;
+use Azuriom\Plugin\InspiratoStats\Events\VerificationChanged;
+use Azuriom\Plugin\InspiratoStats\Events\ViolationAdded;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\StoreViolationRequest;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateTrustLevelRequest;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateVerificationRequest;
+use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
+use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
+use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
+use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
+use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
+use Azuriom\Plugin\InspiratoStats\Models\Verification;
+use Azuriom\Plugin\InspiratoStats\Models\Violation;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -113,12 +114,10 @@ class UsersController extends Controller
         event(new ActivityChanged($user, $activity));
         event(new CoinsChanged($user, $coins));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.metrics.updated', [
-                'user_id' => $user->id,
-                'actor_id' => auth()->id(),
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.metrics.updated', [
+            'user_id' => $user->id,
+            'actor_id' => auth()->id(),
+        ]);
 
         return redirect()->route('socialprofile.admin.users.show', $user)->with('status', __('socialprofile::messages.admin.users.updated'));
     }
@@ -132,13 +131,11 @@ class UsersController extends Controller
 
         event(new TrustLevelChanged($user, $trust, auth()->user()));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.trust.updated', [
-                'user_id' => $user->id,
-                'actor_id' => auth()->id(),
-                'level' => $trust->level,
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.trust.updated', [
+            'user_id' => $user->id,
+            'actor_id' => auth()->id(),
+            'level' => $trust->level,
+        ]);
 
         return redirect()->route('socialprofile.admin.users.show', $user)->with('status', __('socialprofile::messages.admin.users.updated'));
     }
@@ -151,13 +148,11 @@ class UsersController extends Controller
 
         event(new VerificationChanged($user, $verification));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.verification.updated', [
-                'user_id' => $user->id,
-                'actor_id' => auth()->id(),
-                'status' => $verification->status,
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.verification.updated', [
+            'user_id' => $user->id,
+            'actor_id' => auth()->id(),
+            'status' => $verification->status,
+        ]);
 
         return redirect()->route('socialprofile.admin.users.show', $user)->with('status', __('socialprofile::messages.admin.users.updated'));
     }
@@ -172,13 +167,11 @@ class UsersController extends Controller
 
         event(new ViolationAdded($user, $violation));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.violation.created', [
-                'user_id' => $user->id,
-                'actor_id' => auth()->id(),
-                'violation_id' => $violation->id,
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.violation.created', [
+            'user_id' => $user->id,
+            'actor_id' => auth()->id(),
+            'violation_id' => $violation->id,
+        ]);
 
         return redirect()->route('socialprofile.admin.users.show', $user)->with('status', __('socialprofile::messages.admin.users.updated'));
     }

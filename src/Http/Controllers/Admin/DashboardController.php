@@ -1,12 +1,12 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Admin;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin;
 
 use Azuriom\Http\Controllers\Controller;
-use Azuriom\Plugin\SocialProfile\Models\ActivityPoint;
-use Azuriom\Plugin\SocialProfile\Models\SocialScore;
-use Azuriom\Plugin\SocialProfile\Models\Verification;
-use Azuriom\Plugin\SocialProfile\Models\Violation;
+use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
+use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
+use Azuriom\Plugin\InspiratoStats\Models\Verification;
+use Azuriom\Plugin\InspiratoStats\Models\Violation;
 
 class DashboardController extends Controller
 {

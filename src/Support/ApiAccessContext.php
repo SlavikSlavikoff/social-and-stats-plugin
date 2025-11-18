@@ -1,9 +1,9 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Support;
+namespace Azuriom\Plugin\InspiratoStats\Support;
 
 use Azuriom\Models\User;
-use Azuriom\Plugin\SocialProfile\Models\ApiToken;
+use Azuriom\Plugin\InspiratoStats\Models\ApiToken;
 
 class ApiAccessContext
 {

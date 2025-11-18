@@ -1,11 +1,12 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Api;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Api;
 
-use Azuriom\Plugin\SocialProfile\Events\ActivityChanged;
-use Azuriom\Plugin\SocialProfile\Http\Requests\UpdateActivityRequest;
-use Azuriom\Plugin\SocialProfile\Http\Resources\ActivityResource;
-use Azuriom\Plugin\SocialProfile\Models\ActivityPoint;
+use Azuriom\Plugin\InspiratoStats\Events\ActivityChanged;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateActivityRequest;
+use Azuriom\Plugin\InspiratoStats\Http\Resources\ActivityResource;
+use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\Request;
 
 class ActivityController extends ApiController
@@ -29,12 +30,10 @@ class ActivityController extends ApiController
 
         event(new ActivityChanged($user, $activity));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.activity.updated', [
-                'user_id' => $user->id,
-                'actor_id' => $context->actor?->id,
-            ]);
-        }
+        ActionLogger::log('socialprofile.activity.updated', [
+            'user_id' => $user->id,
+            'actor_id' => $context->actor?->id,
+        ]);
 
         return $this->resourceResponse(ActivityResource::makeWithAccess($activity, true));
     }

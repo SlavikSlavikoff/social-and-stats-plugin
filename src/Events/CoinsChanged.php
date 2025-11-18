@@ -1,9 +1,9 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Events;
+namespace Azuriom\Plugin\InspiratoStats\Events;
 
 use Azuriom\Models\User;
-use Azuriom\Plugin\SocialProfile\Models\CoinBalance;
+use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 

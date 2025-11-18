@@ -1,10 +1,11 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Api;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Api;
 
-use Azuriom\Plugin\SocialProfile\Http\Requests\UpdateSocialScoreRequest;
-use Azuriom\Plugin\SocialProfile\Http\Resources\SocialScoreResource;
-use Azuriom\Plugin\SocialProfile\Models\SocialScore;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateSocialScoreRequest;
+use Azuriom\Plugin\InspiratoStats\Http\Resources\SocialScoreResource;
+use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\Request;
 
 class SocialScoreController extends ApiController
@@ -26,13 +27,11 @@ class SocialScoreController extends ApiController
         $score->fill($request->validated());
         $score->save();
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.score.updated', [
-                'user_id' => $user->id,
-                'actor_id' => $context->actor?->id,
-                'score' => (int) $score->score,
-            ]);
-        }
+        ActionLogger::log('socialprofile.score.updated', [
+            'user_id' => $user->id,
+            'actor_id' => $context->actor?->id,
+            'score' => (int) $score->score,
+        ]);
 
         return $this->resourceResponse(SocialScoreResource::makeResource($score));
     }

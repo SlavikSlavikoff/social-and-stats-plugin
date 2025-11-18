@@ -1,9 +1,10 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Admin;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin;
 
 use Azuriom\Http\Controllers\Controller;
-use Azuriom\Plugin\SocialProfile\Models\ApiToken;
+use Azuriom\Plugin\InspiratoStats\Models\ApiToken;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -60,12 +61,10 @@ class TokensController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.token.created', [
-                'actor_id' => auth()->id(),
-                'name' => $validated['name'],
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.token.created', [
+            'actor_id' => auth()->id(),
+            'name' => $validated['name'],
+        ]);
 
         return redirect()->route('socialprofile.admin.tokens.index')
             ->with('status', __('socialprofile::messages.admin.tokens.created'))
@@ -88,12 +87,10 @@ class TokensController extends Controller
             'rate_limit' => $validated['rate_limit'] ? ['per_minute' => $validated['rate_limit']] : null,
         ]);
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.token.updated', [
-                'actor_id' => auth()->id(),
-                'token_id' => $token->id,
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.token.updated', [
+            'actor_id' => auth()->id(),
+            'token_id' => $token->id,
+        ]);
 
         return back()->with('status', __('socialprofile::messages.admin.tokens.updated'));
     }
@@ -102,12 +99,10 @@ class TokensController extends Controller
     {
         $token->delete();
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.token.deleted', [
-                'actor_id' => auth()->id(),
-                'token_id' => $token->id,
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.token.deleted', [
+            'actor_id' => auth()->id(),
+            'token_id' => $token->id,
+        ]);
 
         return back()->with('status', __('socialprofile::messages.admin.tokens.deleted'));
     }
@@ -119,12 +114,10 @@ class TokensController extends Controller
             'token_hash' => ApiToken::hash($plainToken),
         ]);
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.token.rotated', [
-                'actor_id' => auth()->id(),
-                'token_id' => $token->id,
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.token.rotated', [
+            'actor_id' => auth()->id(),
+            'token_id' => $token->id,
+        ]);
 
         return redirect()->route('socialprofile.admin.tokens.index')
             ->with('status', __('socialprofile::messages.admin.tokens.rotated'))

@@ -1,12 +1,13 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Admin;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin;
 
 use Azuriom\Http\Controllers\Controller;
 use Azuriom\Models\User;
-use Azuriom\Plugin\SocialProfile\Events\ViolationAdded;
-use Azuriom\Plugin\SocialProfile\Http\Requests\StoreViolationRequest;
-use Azuriom\Plugin\SocialProfile\Models\Violation;
+use Azuriom\Plugin\InspiratoStats\Events\ViolationAdded;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\StoreViolationRequest;
+use Azuriom\Plugin\InspiratoStats\Models\Violation;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -35,12 +36,10 @@ class ViolationsController extends Controller
             event(new ViolationAdded($user, $violation));
         }
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.violation.created', [
-                'user_id' => $payload['user_id'],
-                'actor_id' => auth()->id(),
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.violation.created', [
+            'user_id' => $payload['user_id'],
+            'actor_id' => auth()->id(),
+        ]);
 
         return back()->with('status', __('socialprofile::messages.admin.violations.created'));
     }
@@ -49,12 +48,10 @@ class ViolationsController extends Controller
     {
         $violation->delete();
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.violation.deleted', [
-                'violation_id' => $violation->id,
-                'actor_id' => auth()->id(),
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.violation.deleted', [
+            'violation_id' => $violation->id,
+            'actor_id' => auth()->id(),
+        ]);
 
         return back()->with('status', __('socialprofile::messages.admin.violations.deleted'));
     }

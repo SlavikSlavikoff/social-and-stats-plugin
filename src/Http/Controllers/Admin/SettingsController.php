@@ -1,8 +1,9 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Admin;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin;
 
 use Azuriom\Http\Controllers\Controller;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -34,13 +35,10 @@ class SettingsController extends Controller
         setting()->set('socialprofile_show_coins_public', $request->boolean('show_coins_public'));
         setting()->set('socialprofile_enable_hmac', $request->boolean('enable_hmac'));
         setting()->set('socialprofile_hmac_secret', $validated['hmac_secret'] ?? null);
-        setting()->save();
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.admin.settings.updated', [
-                'actor_id' => auth()->id(),
-            ]);
-        }
+        ActionLogger::log('socialprofile.admin.settings.updated', [
+            'actor_id' => auth()->id(),
+        ]);
 
         return redirect()->route('socialprofile.admin.settings.edit')->with('status', __('socialprofile::messages.admin.settings.saved'));
     }

@@ -1,11 +1,12 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Api;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Api;
 
-use Azuriom\Plugin\SocialProfile\Events\ViolationAdded;
-use Azuriom\Plugin\SocialProfile\Http\Requests\StoreViolationRequest;
-use Azuriom\Plugin\SocialProfile\Http\Resources\ViolationResource;
-use Azuriom\Plugin\SocialProfile\Models\Violation;
+use Azuriom\Plugin\InspiratoStats\Events\ViolationAdded;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\StoreViolationRequest;
+use Azuriom\Plugin\InspiratoStats\Http\Resources\ViolationResource;
+use Azuriom\Plugin\InspiratoStats\Models\Violation;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\Request;
 
 class ViolationsController extends ApiController
@@ -36,13 +37,11 @@ class ViolationsController extends ApiController
 
         event(new ViolationAdded($user, $violation));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.violation.created', [
-                'user_id' => $user->id,
-                'actor_id' => $context->actor?->id,
-                'violation_id' => $violation->id,
-            ]);
-        }
+        ActionLogger::log('socialprofile.violation.created', [
+            'user_id' => $user->id,
+            'actor_id' => $context->actor?->id,
+            'violation_id' => $violation->id,
+        ]);
 
         return new ViolationResource($violation);
     }

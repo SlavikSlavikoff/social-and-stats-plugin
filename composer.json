@@ -4,7 +4,12 @@
     "description": "Social profile and stats plugin for Azuriom.",
     "autoload": {
         "psr-4": {
-            "Azuriom\\Plugin\\SocialProfile\\": "src/"
+            "Azuriom\\Plugin\\InspiratoStats\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Azuriom\\Plugin\\InspiratoStats\\Tests\\": "tests/"
         }
     },
     "replace": {

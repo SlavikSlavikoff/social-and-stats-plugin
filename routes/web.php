@@ -1,7 +1,7 @@
 <?php
 
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Web\LeaderboardController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Web\ProfileController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Web\LeaderboardController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Web\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {

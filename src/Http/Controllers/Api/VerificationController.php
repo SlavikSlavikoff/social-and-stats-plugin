@@ -1,11 +1,12 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Api;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Api;
 
-use Azuriom\Plugin\SocialProfile\Events\VerificationChanged;
-use Azuriom\Plugin\SocialProfile\Http\Requests\UpdateVerificationRequest;
-use Azuriom\Plugin\SocialProfile\Http\Resources\VerificationResource;
-use Azuriom\Plugin\SocialProfile\Models\Verification;
+use Azuriom\Plugin\InspiratoStats\Events\VerificationChanged;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateVerificationRequest;
+use Azuriom\Plugin\InspiratoStats\Http\Resources\VerificationResource;
+use Azuriom\Plugin\InspiratoStats\Models\Verification;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\Request;
 
 class VerificationController extends ApiController
@@ -29,13 +30,11 @@ class VerificationController extends ApiController
 
         event(new VerificationChanged($user, $verification));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.verification.updated', [
-                'user_id' => $user->id,
-                'actor_id' => $context->actor?->id,
-                'status' => $verification->status,
-            ]);
-        }
+        ActionLogger::log('socialprofile.verification.updated', [
+            'user_id' => $user->id,
+            'actor_id' => $context->actor?->id,
+            'status' => $verification->status,
+        ]);
 
         return $this->resourceResponse(VerificationResource::makeWithAccess($verification, true));
     }

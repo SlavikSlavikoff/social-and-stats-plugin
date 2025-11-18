@@ -1,15 +1,15 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Web;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Web;
 
 use Azuriom\Http\Controllers\Controller;
-use Azuriom\Plugin\SocialProfile\Models\ActivityPoint;
-use Azuriom\Plugin\SocialProfile\Models\CoinBalance;
-use Azuriom\Plugin\SocialProfile\Models\GameStatistic;
-use Azuriom\Plugin\SocialProfile\Models\SocialScore;
-use Azuriom\Plugin\SocialProfile\Models\TrustLevel;
-use Azuriom\Plugin\SocialProfile\Models\Verification;
-use Azuriom\Plugin\SocialProfile\Models\Violation;
+use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
+use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
+use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
+use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
+use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
+use Azuriom\Plugin\InspiratoStats\Models\Verification;
+use Azuriom\Plugin\InspiratoStats\Models\Violation;
 
 class ProfileController extends Controller
 {

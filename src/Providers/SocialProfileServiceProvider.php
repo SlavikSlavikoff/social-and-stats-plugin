@@ -1,6 +1,6 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Providers;
+namespace Azuriom\Plugin\InspiratoStats\Providers;
 
 use Azuriom\Extensions\Plugin\BasePluginServiceProvider;
 use Azuriom\Models\Permission;
@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
-use Azuriom\Plugin\SocialProfile\Models\ApiToken;
+use Azuriom\Plugin\InspiratoStats\Models\ApiToken;
 
 class SocialProfileServiceProvider extends BasePluginServiceProvider
 {
@@ -57,27 +57,32 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
     protected function adminNavigation(): array
     {
         return [
-            __('socialprofile::messages.admin.nav.dashboard') => [
+            'dashboard' => [
+                'name' => __('socialprofile::messages.admin.nav.dashboard'),
                 'route' => 'socialprofile.admin.dashboard',
                 'icon' => 'fas fa-chart-network',
                 'permission' => 'social.view',
             ],
-            __('socialprofile::messages.admin.nav.users') => [
+            'users' => [
+                'name' => __('socialprofile::messages.admin.nav.users'),
                 'route' => 'socialprofile.admin.users.index',
                 'icon' => 'fas fa-users',
                 'permission' => 'social.edit',
             ],
-            __('socialprofile::messages.admin.nav.violations') => [
+            'violations' => [
+                'name' => __('socialprofile::messages.admin.nav.violations'),
                 'route' => 'socialprofile.admin.violations.index',
                 'icon' => 'fas fa-exclamation-triangle',
                 'permission' => 'social.moderate_violations',
             ],
-            __('socialprofile::messages.admin.nav.tokens') => [
+            'tokens' => [
+                'name' => __('socialprofile::messages.admin.nav.tokens'),
                 'route' => 'socialprofile.admin.tokens.index',
                 'icon' => 'fas fa-key',
                 'permission' => 'social.manage_tokens',
             ],
-            __('socialprofile::messages.admin.nav.settings') => [
+            'settings' => [
+                'name' => __('socialprofile::messages.admin.nav.settings'),
                 'route' => 'socialprofile.admin.settings.edit',
                 'icon' => 'fas fa-sliders-h',
                 'permission' => 'social.edit',
@@ -93,11 +98,13 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
     protected function userNavigation(): array
     {
         return [
-            __('socialprofile::messages.profile.menu') => [
+            'profile' => [
+                'name' => __('socialprofile::messages.profile.menu'),
                 'route' => 'socialprofile.profile.show',
                 'icon' => 'fas fa-id-card',
             ],
-            __('socialprofile::messages.leaderboards.menu') => [
+            'leaderboards' => [
+                'name' => __('socialprofile::messages.leaderboards.menu'),
                 'route' => 'socialprofile.leaderboards.index',
                 'icon' => 'fas fa-trophy',
             ],
@@ -118,14 +125,7 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
             'social.verify_accounts' => __('socialprofile::messages.permissions.verify_accounts'),
         ];
 
-        foreach ($permissions as $permission => $description) {
-            Permission::firstOrCreate([
-                'permission' => $permission,
-                'plugin' => $this->plugin->id,
-            ], [
-                'description' => $description,
-            ]);
-        }
+        Permission::registerPermissions($permissions);
     }
 
     /**

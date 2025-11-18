@@ -1,6 +1,6 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Models;
+namespace Azuriom\Plugin\InspiratoStats\Models;
 
 use Azuriom\Models\User;
 use Illuminate\Database\Eloquent\Model;

@@ -1,11 +1,12 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Api;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Api;
 
-use Azuriom\Plugin\SocialProfile\Events\TrustLevelChanged;
-use Azuriom\Plugin\SocialProfile\Http\Requests\UpdateTrustLevelRequest;
-use Azuriom\Plugin\SocialProfile\Http\Resources\TrustLevelResource;
-use Azuriom\Plugin\SocialProfile\Models\TrustLevel;
+use Azuriom\Plugin\InspiratoStats\Events\TrustLevelChanged;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateTrustLevelRequest;
+use Azuriom\Plugin\InspiratoStats\Http\Resources\TrustLevelResource;
+use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\Request;
 
 class TrustLevelController extends ApiController
@@ -31,13 +32,11 @@ class TrustLevelController extends ApiController
 
         event(new TrustLevelChanged($user, $trust, $context->actor));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.trust.updated', [
-                'user_id' => $user->id,
-                'actor_id' => $context->actor?->id,
-                'level' => $trust->level,
-            ]);
-        }
+        ActionLogger::log('socialprofile.trust.updated', [
+            'user_id' => $user->id,
+            'actor_id' => $context->actor?->id,
+            'level' => $trust->level,
+        ]);
 
         return $this->resourceResponse(TrustLevelResource::makeWithAccess($trust, true));
     }

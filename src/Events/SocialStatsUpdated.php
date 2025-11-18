@@ -1,9 +1,9 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Events;
+namespace Azuriom\Plugin\InspiratoStats\Events;
 
 use Azuriom\Models\User;
-use Azuriom\Plugin\SocialProfile\Models\GameStatistic;
+use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 

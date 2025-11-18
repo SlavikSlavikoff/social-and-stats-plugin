@@ -1,9 +1,9 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Events;
+namespace Azuriom\Plugin\InspiratoStats\Events;
 
 use Azuriom\Models\User;
-use Azuriom\Plugin\SocialProfile\Models\TrustLevel;
+use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 

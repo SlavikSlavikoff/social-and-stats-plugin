@@ -1,8 +1,8 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Requests;
+namespace Azuriom\Plugin\InspiratoStats\Http\Requests;
 
-use Azuriom\Plugin\SocialProfile\Models\TrustLevel;
+use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTrustLevelRequest extends FormRequest

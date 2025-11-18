@@ -1,6 +1,6 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Requests;
+namespace Azuriom\Plugin\InspiratoStats\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 

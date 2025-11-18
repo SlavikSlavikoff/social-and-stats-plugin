@@ -1,10 +1,10 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Web;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Web;
 
 use Azuriom\Http\Controllers\Controller;
-use Azuriom\Plugin\SocialProfile\Models\ActivityPoint;
-use Azuriom\Plugin\SocialProfile\Models\SocialScore;
+use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
+use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
 
 class LeaderboardController extends Controller
 {

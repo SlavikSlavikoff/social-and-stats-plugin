@@ -1,11 +1,12 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Api;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Api;
 
-use Azuriom\Plugin\SocialProfile\Events\SocialStatsUpdated;
-use Azuriom\Plugin\SocialProfile\Http\Requests\UpdateStatsRequest;
-use Azuriom\Plugin\SocialProfile\Http\Resources\GameStatisticResource;
-use Azuriom\Plugin\SocialProfile\Models\GameStatistic;
+use Azuriom\Plugin\InspiratoStats\Events\SocialStatsUpdated;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateStatsRequest;
+use Azuriom\Plugin\InspiratoStats\Http\Resources\GameStatisticResource;
+use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\Request;
 
 class StatsController extends ApiController
@@ -29,12 +30,10 @@ class StatsController extends ApiController
 
         event(new SocialStatsUpdated($user, $stats));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.stats.updated', [
-                'user_id' => $user->id,
-                'actor_id' => $context->actor?->id,
-            ]);
-        }
+        ActionLogger::log('socialprofile.stats.updated', [
+            'user_id' => $user->id,
+            'actor_id' => $context->actor?->id,
+        ]);
 
         return $this->resourceResponse(GameStatisticResource::makeWithAccess($stats, true));
     }

@@ -1,10 +1,10 @@
 <?php
 
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Admin\DashboardController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Admin\SettingsController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Admin\TokensController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Admin\UsersController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Admin\ViolationsController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\DashboardController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\SettingsController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\TokensController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\UsersController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\ViolationsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'index'])

@@ -1,11 +1,11 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Api;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Api;
 
 use Azuriom\Http\Controllers\Controller;
 use Azuriom\Models\User;
-use Azuriom\Plugin\SocialProfile\Models\ApiToken;
-use Azuriom\Plugin\SocialProfile\Support\ApiAccessContext;
+use Azuriom\Plugin\InspiratoStats\Models\ApiToken;
+use Azuriom\Plugin\InspiratoStats\Support\ApiAccessContext;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

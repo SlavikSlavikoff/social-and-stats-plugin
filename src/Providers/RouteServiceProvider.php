@@ -1,6 +1,6 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Providers;
+namespace Azuriom\Plugin\InspiratoStats\Providers;
 
 use Azuriom\Extensions\Plugin\BaseRouteServiceProvider;
 use Illuminate\Support\Facades\Route;

@@ -1,13 +1,13 @@
 <?php
 
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Api\ActivityController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Api\BundleController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Api\CoinsController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Api\SocialScoreController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Api\StatsController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Api\TrustLevelController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Api\VerificationController;
-use Azuriom\Plugin\SocialProfile\Http\Controllers\Api\ViolationsController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\ActivityController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\BundleController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\CoinsController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\SocialScoreController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\StatsController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\TrustLevelController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\VerificationController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\ViolationsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:socialprofile-public')->group(function () {

@@ -1,12 +1,13 @@
 <?php
 
-namespace Azuriom\Plugin\SocialProfile\Http\Controllers\Api;
+namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Api;
 
-use Azuriom\Plugin\SocialProfile\Events\CoinsChanged;
-use Azuriom\Plugin\SocialProfile\Http\Requests\UpdateCoinsRequest;
-use Azuriom\Plugin\SocialProfile\Http\Resources\CoinResource;
-use Azuriom\Plugin\SocialProfile\Models\CoinBalance;
-use Azuriom\Plugin\SocialProfile\Models\Verification;
+use Azuriom\Plugin\InspiratoStats\Events\CoinsChanged;
+use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateCoinsRequest;
+use Azuriom\Plugin\InspiratoStats\Http\Resources\CoinResource;
+use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
+use Azuriom\Plugin\InspiratoStats\Models\Verification;
+use Azuriom\Plugin\InspiratoStats\Support\ActionLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -43,13 +44,11 @@ class CoinsController extends ApiController
 
         event(new CoinsChanged($user, $coins));
 
-        if (function_exists('action')) {
-            action()->log('socialprofile.coins.updated', [
-                'user_id' => $user->id,
-                'actor_id' => $context->actor?->id,
-                'balance' => (float) $coins->balance,
-            ]);
-        }
+        ActionLogger::log('socialprofile.coins.updated', [
+            'user_id' => $user->id,
+            'actor_id' => $context->actor?->id,
+            'balance' => (float) $coins->balance,
+        ]);
 
         return $this->resourceResponse(CoinResource::makeWithAccess($coins, true));
     }

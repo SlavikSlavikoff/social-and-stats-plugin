@@ -1,119 +1,199 @@
 # Social Profile (Inspirato)
 
-The **Social Profile** plugin extends Azuriom user profiles with community metrics used by Inspirato services. It exposes read/write APIs, adds dashboards for staff, and enriches the `/account` and `/leaderboards` pages with new blocks.
+Плагин Social Profile расширяет пользовательский профиль Azuriom социальными метриками Inspirato, добавляет административные панели и REST API v1 с тонкими правами доступа. Плагин совместим с Azuriom API `1.1.0` (см. `plugin.json`) и регистрируется под идентификатором `socialprofile`.
 
-## Features
+## Обзор возможностей
 
-- Community metrics: social score, activity points, virtual coins, trust levels, verification status, gameplay stats, and violations history.
-- Secure API v1 with bearer tokens, scopes, IP allow-lists, and rate limiting.
-- Admin dashboard for quick insights, token management, verification reviews, and trust mapping.
-- Public profile widgets and leaderboard views styled with Inspirato glass aesthetics.
-- Event hooks (`CoinsChanged`, `TrustLevelChanged`, etc.) for further automation.
+- Хранение социальных очков, активности, баланса монет, игровых статистик, уровня доверия, верификации и истории нарушений для каждого пользователя.
+- Публичные страницы `/account/social` и `/leaderboards/social` с кастомными видами и стилями из `assets/css/style.css`.
+- Админ-модули для дашборда, управления пользователями, нарушениями, API‑токенами и настройками.
+- API v1 (`/api/social/v1/...`) с bearer-токенами, скоупами, белым списком IP, rate limit и (опционально) HMAC‑подписью.
+- События (`CoinsChanged`, `TrustLevelChanged`, `VerificationChanged` и др.) для интеграции с внешними сервисами и логирование через `action()` при изменении данных.
 
-## Installation
+## Неймспейсы и автозагрузка
 
-1. Copy the plugin directory to `plugins/socialprofile` in your Azuriom installation.
-2. Run the plugin migrations:
+Все классы плагина объявлены в пространстве имен `Azuriom\Plugin\InspiratoStats\...` и теперь сопоставлены в `composer.json` через PSR‑4‑префикс `Azuriom\\Plugin\\InspiratoStats\\`. После клонирования или обновления репозитория выполните:
+
+```bash
+composer dump-autoload
+```
+
+Это пересоберёт карту классов и гарантирует, что новые неймспейсы корректно подхватятся Azuriom.
+
+## Требования и установка
+
+1. Скопируйте папку плагина в `plugins/socialprofile` вашего Azuriom-проекта.
+2. Убедитесь, что PHP-расширения и версия Azuriom соответствуют минимальным требованиям ядра (API 1.1.0+).
+3. Выполните миграции плагина из корня проекта:
 
    ```bash
+   php artisan azuriom:plugin:migrate socialprofile
+   # или явным путем
    php artisan migrate --path=plugins/socialprofile/database/migrations
    ```
-3. Activate the plugin from the Azuriom admin panel.
 
-## Database Schema
+4. Активируйте плагин в админ-панели Azuriom и выполните `php artisan cache:clear`, чтобы подхватить новые разрешения и маршруты.
+5. Настройте лимиты, отображение монет и HMAC в разделе **Admin → Social Profile → Settings**.
 
-All tables use the `socialprofile_` prefix:
+## Миграции и структура данных
 
-| Table | Purpose |
-|-------|---------|
-| `socialprofile_social_scores` | Aggregate reputation for each user. |
-| `socialprofile_activity_points` | Accumulated activity metric. |
-| `socialprofile_coin_balances` | Virtual currency balance and holds. |
-| `socialprofile_game_statistics` | Playtime and expandable KPI fields. |
-| `socialprofile_trust_levels` | Trust stage with staff note/history. |
-| `socialprofile_violations` | Moderation history with soft deletes. |
-| `socialprofile_verifications` | Verification status and metadata. |
-| `socialprofile_api_tokens` | Bearer tokens, scopes, IP/rate limits. |
+Миграция `2024_01_01_000000_create_socialprofile_tables.php` создает набор таблиц с префиксом `socialprofile_` (все внешние ключи каскадно удаляются):
 
-## Permissions
+| Таблица | Содержимое | Особенности |
+|---------|------------|-------------|
+| `socialprofile_social_scores` | `user_id`, `score` | Уникальная запись на пользователя. |
+| `socialprofile_activity_points` | `user_id`, `points` | Отслеживает активность. |
+| `socialprofile_coin_balances` | `user_id`, `balance`, `hold` | Денежные значения `decimal(18,2)`, блокировки через `lockForUpdate()`. |
+| `socialprofile_game_statistics` | `user_id`, `played_minutes`, `kills`, `deaths`, `extra_metrics` (JSON) | Гибкие метрики игры. |
+| `socialprofile_trust_levels` | `user_id`, `level`, `granted_by`, `note` | Поддерживает `softDeletes`, enum уровней `newbie`→`staff`. |
+| `socialprofile_violations` | `user_id`, `type`, `reason`, `points`, `issued_by`, `evidence_url` | `softDeletes`, индекс по `user_id/created_at`. |
+| `socialprofile_verifications` | `user_id`, `status`, `method`, `meta` | `softDeletes`, хранит произвольные данные проверки. |
+| `socialprofile_api_tokens` | `name`, `token_hash(sha256)`, `scopes` (JSON), `allowed_ips`, `rate_limit`, `created_by` | Используется для защиты API. |
 
-| Permission | Description |
-|------------|-------------|
-| `social.view` | Access the social dashboard. |
-| `social.edit` | Edit metrics and settings. |
-| `social.grant_trust` | Promote/demote trust levels. |
-| `social.manage_tokens` | Manage API tokens. |
-| `social.moderate_violations` | Record or delete violations. |
-| `social.verify_accounts` | Approve or reject verifications. |
+## Настройки панели управления
 
-## API v1
+| Поле (UI) | Ключ в `setting()` | Значение по умолчанию | Описание |
+|-----------|--------------------|------------------------|----------|
+| Public rate limit (req/min) | `socialprofile_public_rate_limit` | `60` | Используется лимитером `socialprofile-public` для всех GET‑запросов. |
+| Token rate limit (req/min) | `socialprofile_token_rate_limit` | `120` | Базовый лимит `socialprofile-token`, если у токена не задано индивидуальное значение. |
+| Show coins publicly | `socialprofile_show_coins_public` | `true` | Разрешает отдавать баланс монет в публичных ответах для верифицированных аккаунтов. |
+| Require HMAC for writes | `socialprofile_enable_hmac` | `false` | Если включено, все запись-запросы с токеном должны иметь подпись. |
+| HMAC secret | `socialprofile_hmac_secret` | `null` | Секрет для подписи `X-Social-Signature`; храните отдельно от токенов. |
 
-Base path: `/api/social/v1`
+## Разрешения
 
-All write operations require a bearer token with the relevant scope and may be rate limited by `throttle:socialprofile-token`. Public GETs inherit `throttle:socialprofile-public` but automatically restrict the payload for unverified users or when public visibility is disabled.
+| Разрешение | Назначение |
+|------------|-----------|
+| `social.view` | Просмотр админ-дашборда Social Profile. |
+| `social.edit` | Редактирование метрик, настроек и просмотр пользователей. |
+| `social.grant_trust` | Изменение уровней доверия. |
+| `social.manage_tokens` | Управление API‑токенами. |
+| `social.moderate_violations` | Создание/удаление нарушений. |
+| `social.verify_accounts` | Одобрение/отклонение верификаций. |
 
-| Endpoint | Method(s) | Scope(s) | Description |
-|----------|-----------|----------|-------------|
-| `/user/{nickname}/stats` | `GET`, `PUT` | `stats:read`, `stats:write` | Gameplay statistics. |
-| `/user/{nickname}/activity` | `GET`, `PUT` | `activity:read`, `activity:write` | Activity points. |
-| `/user/{nickname}/coins` | `GET`, `PUT` | `coins:read`, `coins:write` | Virtual currency balances. |
-| `/user/{nickname}/social-score` | `GET`, `PUT` | `score:read`, `score:write` | Social reputation score. |
-| `/user/{nickname}/trust-level` | `GET`, `PUT` | `trust:read`, `trust:write` | Trust level management. |
-| `/user/{nickname}/violations` | `GET`, `POST` | `violations:read`, `violations:write` | Moderation history and creation. |
-| `/user/{nickname}/bundle` | `GET` | `bundle:read` | Aggregated safe payload for profile display. |
-| `/user/{nickname}/verification` | `GET`, `PUT` | `verify:read`, `verify:write` | Verification workflow. |
+## Маршруты
 
-### Token scopes
+### Публичные (web)
 
-Supported scope values:
+| Route name | Метод | URI | Middleware | Описание |
+|------------|-------|-----|------------|----------|
+| `socialprofile.profile.show` | GET | `/account/social` | `web`, `auth` | Персональный профиль текущего пользователя. |
+| `socialprofile.leaderboards.index` | GET | `/leaderboards/social` | `web` | Таблицы лидеров по активности и social score. |
 
+### Админ‑панель (`/admin/socialprofile`, middleware: `web`, `admin-access`)
+
+| Route name | Метод | URI | Middleware `can:` | Назначение |
+|------------|-------|-----|-------------------|------------|
+| `socialprofile.admin.dashboard` | GET | `/` | `social.view` | Обзор ключевых метрик. |
+| `socialprofile.admin.users.index` | GET | `/users` | `social.edit` | Поиск и список пользователей. |
+| `socialprofile.admin.users.show` | GET | `/users/{user}` | `social.edit` | Карточка пользователя и метрики. |
+| `socialprofile.admin.users.metrics.update` | POST | `/users/{user}/metrics` | `social.edit` | Обновление очков, активности, монет и статистики. |
+| `socialprofile.admin.users.trust.update` | POST | `/users/{user}/trust` | `social.grant_trust` | Смена уровня доверия. |
+| `socialprofile.admin.users.verification.update` | POST | `/users/{user}/verification` | `social.verify_accounts` | Управление статусом верификации. |
+| `socialprofile.admin.users.violations.store` | POST | `/users/{user}/violations` | `social.moderate_violations` | Добавление нарушения из профиля. |
+| `socialprofile.admin.violations.index` | GET | `/violations` | `social.moderate_violations` | Список всех нарушений. |
+| `socialprofile.admin.violations.store` | POST | `/violations` | `social.moderate_violations` | Создание нарушения по ID пользователя. |
+| `socialprofile.admin.violations.destroy` | DELETE | `/violations/{violation}` | `social.moderate_violations` | Удаление записи о нарушении. |
+| `socialprofile.admin.tokens.index` | GET | `/tokens` | `social.manage_tokens` | Просмотр токенов и выдача новых. |
+| `socialprofile.admin.tokens.store` | POST | `/tokens` | `social.manage_tokens` | Создание токена и отображение исходного значения. |
+| `socialprofile.admin.tokens.update` | PUT | `/tokens/{token}` | `social.manage_tokens` | Правка названия, IP и скоупов. |
+| `socialprofile.admin.tokens.rotate` | POST | `/tokens/{token}/rotate` | `social.manage_tokens` | Вращение секретного значения токена. |
+| `socialprofile.admin.tokens.destroy` | DELETE | `/tokens/{token}` | `social.manage_tokens` | Удаление токена. |
+| `socialprofile.admin.settings.edit` | GET | `/settings` | `social.edit` | Форма глобальных настроек. |
+| `socialprofile.admin.settings.update` | POST | `/settings` | `social.edit` | Сохранение настроек. |
+
+### API v1 (`/api/social/v1`, middleware `api`)
+
+| URI | Метод | Scope | Throttle | Описание |
+|-----|-------|-------|----------|----------|
+| `/user/{nickname}/stats` | GET | `stats:read` | `socialprofile-public` | Возвращает `played_minutes` и (при полном доступе) kills/deaths/extra_metrics. |
+| `/user/{nickname}/stats` | PUT | `stats:write` | `socialprofile-token` | Обновляет игровые метрики и триггерит `SocialStatsUpdated`. |
+| `/user/{nickname}/activity` | GET | `activity:read` | `socialprofile-public` | Отдает очки активности. |
+| `/user/{nickname}/activity` | PUT | `activity:write` | `socialprofile-token` | Изменяет активность и шлет `ActivityChanged`. |
+| `/user/{nickname}/coins` | GET | `coins:read` | `socialprofile-public` | Баланс виден, только если `show_coins_public` и пользователь verified; полный доступ видит `hold`. |
+| `/user/{nickname}/coins` | PUT | `coins:write` | `socialprofile-token` | Обновляет баланс с блокировкой строки и событием `CoinsChanged`. |
+| `/user/{nickname}/social-score` | GET | `score:read` | `socialprofile-public` | Возвращает текущее social score. |
+| `/user/{nickname}/social-score` | PUT | `score:write` | `socialprofile-token` | Устанавливает новое значение. |
+| `/user/{nickname}/trust-level` | GET | `trust:read` | `socialprofile-public` | Уровень доверия и локализованный label; полный доступ видит note/granted_by. |
+| `/user/{nickname}/trust-level` | PUT | `trust:write` | `socialprofile-token` | Изменяет уровень (требует разрешения `social.grant_trust`). |
+| `/user/{nickname}/violations` | GET | `violations:read` | `socialprofile-public` | Требует полного доступа; возвращает коллекцию нарушений. |
+| `/user/{nickname}/violations` | POST | `violations:write` | `socialprofile-token` | Создает нарушение (разрешение `social.moderate_violations`). |
+| `/user/{nickname}/bundle` | GET | `bundle:read` | `socialprofile-public` | Консолидированный payload для профиля (монеты и расширенные поля только при доступе). |
+| `/user/{nickname}/verification` | GET | `verify:read` | `socialprofile-public` | Статус верификации (детали только при полном доступе). |
+| `/user/{nickname}/verification` | PUT | `verify:write` | `socialprofile-token` | Обновляет статус (разрешение `social.verify_accounts`) и шлет `VerificationChanged`. |
+
+> Ник (`{nickname}`) ищется по `config('auth.providers.users.field', 'name')`, поэтому можно переключить поиск на `uuid`, установив соответствующую опцию в ядре.
+
+Все write‑методы требуют заголовка `Authorization: Bearer <token>`, проверки IP (если заданы) и, при включенном флажке **Require HMAC**, заголовка `X-Social-Signature`.
+
+## API‑токены и scopes
+
+### Создание токена
+
+1. Перейдите в **Admin → Social Profile → Tokens**.
+2. Задайте имя, выберите один или несколько скоупов. Доступны как точные значения (`coins:write`), так и шаблоны (`coins:*`, `*`).
+3. (Опционально) Укажите список разрешенных IP через запятую или перевод строки. Поле может содержать IPv4/IPv6.
+4. (Опционально) Задайте лимит запросов в минуту; число попадет в JSON `rate_limit.per_minute`.
+5. После сохранения исходный токен отображается один раз и сохраняется в виде `sha256`‑хэша в базе.
+
+### Доступные scopes
+
+| Scope | Тип | Назначение |
+|-------|-----|------------|
+| `stats:read` / `stats:write` | GET / PUT `/user/{nickname}/stats` | Игровая статистика. |
+| `activity:read` / `activity:write` | GET / PUT `/user/{nickname}/activity` | Очки активности. |
+| `coins:read` / `coins:write` | GET / PUT `/user/{nickname}/coins` | Баланс монет и холда. |
+| `score:read` / `score:write` | GET / PUT `/user/{nickname}/social-score` | Социальный рейтинг. |
+| `trust:read` / `trust:write` | GET / PUT `/user/{nickname}/trust-level` | Уровни доверия. |
+| `violations:read` / `violations:write` | GET / POST `/user/{nickname}/violations` | История и создание нарушений. |
+| `verify:read` / `verify:write` | GET / PUT `/user/{nickname}/verification` | Процесс верификации. |
+| `bundle:read` | GET `/user/{nickname}/bundle` | Компактный профиль для сторонних сервисов. |
+
+Метод `ApiToken::allowsScope()` понимает `*` для полного доступа или форму `<домен>:*` (например, `coins:*`). Используйте их для упрощения конфигурации сервисов.
+
+## Ограничения скорости
+
+| Лимитер | Управляется настройкой | Ключ квотирования | Значение по умолчанию | Где используется |
+|---------|-----------------------|-------------------|-----------------------|------------------|
+| `throttle:socialprofile-public` | `socialprofile_public_rate_limit` | IP адрес | `60 req/min` | Все GET API‑маршруты. |
+| `throttle:socialprofile-token` | `rate_limit.per_minute` токена → иначе `socialprofile_token_rate_limit` | `token-{id}` при валидном токене, иначе `ip-{ip}` | `120 req/min` | Все PUT/POST API‑маршруты. |
+
+Изменяйте значения через UI настроек. Персональный лимит токена имеет приоритет над глобальным значением.
+
+## Пример HMAC‑подписи
+
+При включенном флаге **Require HMAC** сервер проверяет заголовок `X-Social-Signature`, который вычисляется как `hash_hmac('sha256', $rawBody, $secret)` в шестнадцатеричном виде. Пример вызова обновления баланса:
+
+```bash
+SECRET="super-secret-string"
+BODY='{"balance":150.25,"hold":0}'
+SIGNATURE=$(printf %s "$BODY" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+
+curl -X PUT https://example.com/api/social/v1/user/Aurora/coins \
+  -H "Authorization: Bearer eyJ..." \
+  -H "Content-Type: application/json" \
+  -H "X-Social-Signature: ${SIGNATURE}" \
+  -d "$BODY"
 ```
-stats:read, stats:write
-activity:read, activity:write
-coins:read, coins:write
-score:read, score:write
-trust:read, trust:write
-violations:read, violations:write
-verify:read, verify:write
-bundle:read
-```
 
-Tokens are hashed with SHA-256 and can be restricted to IP lists and per-minute rate limits. Use the admin panel under **API tokens** to manage them.
+Если секрет не задан или подпись не совпадает, `ApiController` завершает запрос статусом `401`. Подпись требуется только для write‑методов и только когда запрос аутентифицируется по токену.
 
-### Rate limiting
+## События и интеграции
 
-- `socialprofile-public`: default 60 req/min per IP (configurable).
-- `socialprofile-token`: default 120 req/min per token or IP (configurable, overridable per token).
+- `SocialStatsUpdated(User $user, GameStatistic $stats)` — обновлена игровая статистика.
+- `ActivityChanged(User $user, ActivityPoint $activity)` — изменены очки активности.
+- `CoinsChanged(User $user, CoinBalance $coins)` — изменен баланс монет.
+- `TrustLevelChanged(User $user, TrustLevel $trust, ?User $actor)` — обновлен уровень доверия.
+- `ViolationAdded(User $user, Violation $violation)` — создано нарушение.
+- `VerificationChanged(User $user, Verification $verification)` — обновлен статус верификации.
 
-### HMAC signatures
+Подписывайтесь на события для публикации изменений в очереди, вебхуки и т.п.
 
-Optionally enable HMAC protection in **Settings**. When active, clients must send `X-Social-Signature` with the SHA-256 hash of the raw request body using the configured secret.
+## Поведение ответов API
 
-## Events
+- Публичные ответы `GameStatisticResource`, `TrustLevelResource`, `CoinResource`, `VerificationResource` и `BundleResource` автоматически скрывают чувствительные поля, если `hasFullAccess=false`.
+- Баланс монет в ответах GET/Bundle доступен только при полном доступе или когда включен `Show coins publicly` и пользователь успешно верифицирован.
+- Эндпоинт `/user/{nickname}/violations` в режиме GET всегда требует полного доступа (токен/пермишен/владелец).
+- `resolveUser()` ищет пользователя по полю, заданному в `config('auth.providers.users.field')`, поэтому можно использовать ник, UUID или email в зависимости от конфигурации Azuriom.
 
-| Event | Trigger |
-|-------|---------|
-| `SocialStatsUpdated` | Statistics updated. |
-| `ActivityChanged` | Activity points adjusted. |
-| `CoinsChanged` | Coin balance changed. |
-| `TrustLevelChanged` | Trust level updated. |
-| `ViolationAdded` | New violation recorded. |
-| `VerificationChanged` | Verification status changed. |
-
-Subscribe to these events to propagate data to other services or message queues.
-
-## UI Blocks
-
-- `/account/social` (user menu: “My Progress”).
-- `/leaderboards/social` (leaderboard menu).
-- Admin dashboard with dedicated pages for users, violations, tokens, and settings.
-
-All views load `assets/css/style.css` for glassmorphism-inspired styling compatible with Inspirato’s theme.
-
-## Logging
-
-Sensitive changes call the Azuriom `action()` helper when available so that coin operations, trust adjustments, verification changes, and token management are recorded in the action log.
-
-## Testing & Build
-
-Run plugin checks through your Azuriom instance (migrations + tests) before deployment. Ensure rate-limiter settings align with your infrastructure.
+Эти особенности позволяют безопасно кешировать публичные запросы и при этом отдавать максимум данных доверенным интеграциям.

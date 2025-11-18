@@ -9,7 +9,7 @@
     ],
     "azuriom_api": "1.1.0",
     "providers": [
-        "\\Azuriom\\Plugin\\SocialProfile\\Providers\\SocialProfileServiceProvider",
-        "\\Azuriom\\Plugin\\SocialProfile\\Providers\\RouteServiceProvider"
+        "\\Azuriom\\Plugin\\InspiratoStats\\Providers\\SocialProfileServiceProvider",
+        "\\Azuriom\\Plugin\\InspiratoStats\\Providers\\RouteServiceProvider"
     ]
 }
