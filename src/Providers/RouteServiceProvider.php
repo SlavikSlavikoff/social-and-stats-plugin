@@ -1,6 +1,6 @@
 <?php
 
-namespace Azuriom\Plugin\InspiratoStats\Providers;
+namespace Azuriom\Plugin\SocialProfile\Providers;
 
 use Azuriom\Extensions\Plugin\BaseRouteServiceProvider;
 use Illuminate\Support\Facades\Route;
@@ -13,18 +13,16 @@ class RouteServiceProvider extends BaseRouteServiceProvider
     public function loadRoutes(): void
     {
         Route::middleware('web')
-            ->prefix($this->plugin->id)
-            ->name($this->plugin->id.'.')
-            ->group(plugin_path($this->plugin->id.'/routes/web.php'));
+            ->group(plugin_path('socialprofile/routes/web.php'));
 
-        Route::middleware('admin-access')
-            ->prefix('admin/'.$this->plugin->id)
-            ->name($this->plugin->id.'.admin.')
-            ->group(plugin_path($this->plugin->id.'/routes/admin.php'));
+        Route::middleware(['web', 'admin-access'])
+            ->prefix('admin/socialprofile')
+            ->name('socialprofile.admin.')
+            ->group(plugin_path('socialprofile/routes/admin.php'));
 
         Route::middleware('api')
-            ->prefix('api/'.$this->plugin->id)
-            ->name($this->plugin->id.'.api.')
-            ->group(plugin_path($this->plugin->id.'/routes/api.php'));
+            ->prefix('api/social/v1')
+            ->name('socialprofile.api.')
+            ->group(plugin_path('socialprofile/routes/api.php'));
     }
 }
