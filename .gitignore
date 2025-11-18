@@ -1,10 +1,30 @@
-# PhpStorm
+﻿# PhpStorm
 .idea/
 *.iml
 *.iws
 
-# Mac
+# OS
 .DS_Store
+Thumbs.db
 
 # Composer
 /vendor/
+
+# IDE
+.vscode/
+.idea/
+
+# Node / build
+node_modules/
+dist/
+build/
+
+# PHP/Laravel
+vendor/
+.env
+.env.*
+storage/
+bootstrap/cache/
+
+# Misc
+*.log
