@@ -12,11 +12,13 @@ use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
 use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
 use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
 use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
+use Azuriom\Plugin\InspiratoStats\Models\Violation;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 
 class SocialProfileServiceProvider extends BasePluginServiceProvider
@@ -46,6 +48,7 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
         $this->registerUserNavigation();
         $this->registerRateLimiters();
         $this->initializeUserRecords();
+        $this->registerProfileViewExtensions();
         $this->registerRoleListener();
     }
 
@@ -58,7 +61,6 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
     {
         return [
             'socialprofile.leaderboards.index' => __('socialprofile::messages.leaderboards.title'),
-            'socialprofile.profile.show' => __('socialprofile::messages.profile.title'),
         ];
     }
 
@@ -111,11 +113,6 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
     protected function userNavigation(): array
     {
         return [
-            'profile' => [
-                'name' => __('socialprofile::messages.profile.menu'),
-                'route' => 'socialprofile.profile.show',
-                'icon' => 'fas fa-id-card',
-            ],
             'leaderboards' => [
                 'name' => __('socialprofile::messages.leaderboards.menu'),
                 'route' => 'socialprofile.leaderboards.index',
@@ -201,6 +198,43 @@ class SocialProfileServiceProvider extends BasePluginServiceProvider
             //   ]
             // - Поддержать перечисление ID через запятую и wildcard '*'.
             // - На основе конфигурации выполнять автоматизацию (вайтлист, бан и т. п.).
+        });
+    }
+
+    protected function registerProfileViewExtensions(): void
+    {
+        View::composer('profile.index', function ($view) {
+            $user = $view->getData()['user'] ?? null;
+
+            if ($user === null) {
+                return;
+            }
+
+            $stats = [
+                'score' => SocialScore::firstOrCreate(['user_id' => $user->id]),
+                'activity' => ActivityPoint::firstOrCreate(['user_id' => $user->id]),
+                'coins' => CoinBalance::firstOrCreate(['user_id' => $user->id]),
+                'stats' => GameStatistic::firstOrCreate(['user_id' => $user->id]),
+                'trust' => TrustLevel::firstOrCreate(['user_id' => $user->id]),
+                'violations' => Violation::where('user_id', $user->id)->latest()->limit(10)->get(),
+            ];
+
+            $view->with('socialProfileStats', $stats);
+
+            $cards = $view->getData()['cards'] ?? [];
+            $cards[] = [
+                'name' => __('socialprofile::messages.profile.statistics'),
+                'view' => 'socialprofile::partials.profile.cards',
+                'data' => $stats,
+            ];
+
+            $cards[] = [
+                'name' => __('socialprofile::messages.profile.recent_violations'),
+                'view' => 'socialprofile::partials.profile.violations',
+                'data' => ['violations' => $stats['violations']],
+            ];
+
+            $view->with('cards', $cards);
         });
     }
 }

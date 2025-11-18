@@ -5,7 +5,7 @@
 ## Обзор возможностей
 
 - Хранение социальных очков, активности, баланса монет, игровых статистик, уровня доверия, верификации и истории нарушений для каждого пользователя.
-- Публичные страницы `/account/social` и `/leaderboards/social` с кастомными видами и стилями из `assets/css/style.css`.
+- Профильные карточки напрямую встраиваются в стандартный `/profile`, а лидерборды остаются на `/leaderboards/social` со стилями из `assets/css/style.css`.
 - Админ-модули для дашборда, управления пользователями, нарушениями, API‑токенами и настройками.
 - API v1 (`/api/social/v1/...`) с bearer-токенами, скоупами, белым списком IP, rate limit и (опционально) HMAC‑подписью.
 - События (`CoinsChanged`, `TrustLevelChanged`, `VerificationChanged` и др.) для интеграции с внешними сервисами и логирование через `action()` при изменении данных.
@@ -75,8 +75,9 @@ composer dump-autoload
 
 | Route name | Метод | URI | Middleware | Описание |
 |------------|-------|-----|------------|----------|
-| `socialprofile.profile.show` | GET | `/account/social` | `web`, `auth` | Персональный профиль текущего пользователя. |
 | `socialprofile.leaderboards.index` | GET | `/leaderboards/social` | `web` | Таблицы лидеров по активности и social score. |
+
+> Страница `/profile` (маршрут `profile.index`) расширяется через `SocialProfileServiceProvider` и не требует отдельного URL.
 
 ### Админ‑панель (`/admin/socialprofile`, middleware: `web`, `admin-access`)
 

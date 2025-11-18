@@ -6,6 +6,7 @@ return [
         'menu' => 'Мой прогресс',
         'identity' => 'Профиль',
         'statistics' => 'Статистика',
+        'empty_state' => 'Тут пока пусто!',
         'verification' => 'Верификация',
         'verification_status' => [
             'unverified' => 'Не подтверждён',

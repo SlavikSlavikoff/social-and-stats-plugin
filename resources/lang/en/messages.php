@@ -8,6 +8,7 @@ return [
         'statistics' => 'Statistics',
         'recent_violations' => 'Recent violations',
         'no_violations' => 'No violations recorded',
+        'empty_state' => 'Nothing to show yet.',
         'type' => 'Type',
         'reason' => 'Reason',
         'points' => 'Points',

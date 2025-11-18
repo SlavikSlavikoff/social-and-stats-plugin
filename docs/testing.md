@@ -69,7 +69,7 @@ Import `docs/socialprofile.postman_collection.json` (uses variables `base_url`, 
 2. **Admin → Users** – search, metric edit form, trust block, violation log creation.
 3. **Admin → Tokens** – creation form generates plaintext token once, rotate/delete actions.
 4. **Admin → Settings** – rate limit inputs, visibility checkboxes, HMAC toggle with secret; toggles immediately apply to the API.
-5. **User profile (/account/social)** – widgets load without console errors, localized labels.
+5. **User profile (/profile)** – cards from the plugin appear with empty states instead of disappearing.
 6. **Public leaderboard (/leaderboards/social)** – shows ranking for scores and activity.
 
 Document any findings directly in issues before merging.

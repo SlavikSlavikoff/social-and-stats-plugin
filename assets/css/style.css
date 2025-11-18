@@ -53,6 +53,28 @@
     color: #38bdf8;
 }
 
+.info-card {
+    padding: 1.25rem;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.stats-card {
+    padding: 1.5rem;
+}
+
+.stats-card .stat-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.5rem 0;
+}
+
+.stats-card .stat-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
 .socialprofile-admin .socialprofile-card {
     margin-bottom: 1.5rem;
 }
