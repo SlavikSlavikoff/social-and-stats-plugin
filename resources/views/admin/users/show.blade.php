@@ -147,33 +147,12 @@
             </table>
         </div>
         @can('social.moderate_violations')
-        <hr>
-        <form method="POST" action="{{ route('socialprofile.admin.users.violations.store', $user) }}" class="row g-3">
-            @csrf
-            <div class="col-md-3">
-                <label class="form-label">{{ __('socialprofile::messages.profile.type') }}</label>
-                <select name="type" class="form-select">
-                    @foreach(['warning','mute','ban','other'] as $type)
-                        <option value="{{ $type }}">{{ __('socialprofile::messages.violations.types.' . $type) }}</option>
-                    @endforeach
-                </select>
+            <div class="alert alert-info mt-4">
+                {{ __('socialprofile::messages.admin.users.violations_redirect_notice') }}
+                <a href="{{ route('socialprofile.court.judge') }}" class="btn btn-sm btn-outline-primary ms-2">
+                    <i class="fas fa-gavel me-1"></i>{{ __('socialprofile::messages.court.judge.cta') }}
+                </a>
             </div>
-            <div class="col-md-5">
-                <label class="form-label">{{ __('socialprofile::messages.profile.reason') }}</label>
-                <input type="text" name="reason" class="form-control" required>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">{{ __('socialprofile::messages.profile.points') }}</label>
-                <input type="number" name="points" class="form-control" min="0" required>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">{{ __('socialprofile::messages.admin.users.evidence') }}</label>
-                <input type="url" name="evidence_url" class="form-control">
-            </div>
-            <div class="col-12">
-                <button class="btn btn-danger" type="submit">{{ __('socialprofile::messages.admin.users.add_violation') }}</button>
-            </div>
-        </form>
         @endcan
     </div>
 </div>

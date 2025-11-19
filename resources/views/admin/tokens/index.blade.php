@@ -32,10 +32,16 @@
                     <div class="mb-3">
                         <label class="form-label">{{ __('socialprofile::messages.admin.tokens.scopes') }}</label>
                         <div class="token-scope-grid">
-                            @foreach($availableScopes as $scope)
+                            @foreach($availableScopes as $scope => $meta)
                                 <label class="form-check">
                                     <input type="checkbox" class="form-check-input" name="scopes[]" value="{{ $scope }}" checked>
-                                    <span class="form-check-label">{{ $scope }}</span>
+                                    <span class="form-check-label">
+                                        <strong>{{ __($meta['label'] ?? 'socialprofile::messages.admin.tokens.scope_labels.unknown') }}</strong>
+                                        <span class="badge bg-light text-dark border ms-1">{{ $scope }}</span>
+                                        <small class="d-block text-muted">
+                                            {{ __($meta['description'] ?? 'socialprofile::messages.admin.tokens.scope_descriptions.unknown') }}
+                                        </small>
+                                    </span>
                                 </label>
                             @endforeach
                         </div>
@@ -72,7 +78,12 @@
                                 <td>{{ $token->name }}</td>
                                 <td>
                                     @foreach($token->scopes as $scope)
-                                        <span class="badge bg-secondary me-1">{{ $scope }}</span>
+                                        @php($meta = $availableScopes[$scope] ?? null)
+                                        <div class="small mb-1">
+                                            <span class="badge bg-secondary me-1">{{ $scope }}</span>
+                                            <span class="fw-semibold">{{ __($meta['label'] ?? 'socialprofile::messages.admin.tokens.scope_labels.unknown') }}</span>
+                                            <span class="d-block text-muted">{{ __($meta['description'] ?? 'socialprofile::messages.admin.tokens.scope_descriptions.unknown') }}</span>
+                                        </div>
                                     @endforeach
                                     @if($token->allowed_ips)
                                         <div class="small text-muted mt-1">{{ implode(', ', $token->allowed_ips) }}</div>

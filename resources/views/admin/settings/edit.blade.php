@@ -20,10 +20,12 @@
                 <div class="col-md-4">
                     <label class="form-label">{{ __('socialprofile::messages.admin.settings.public_rate_limit') }}</label>
                     <input type="number" name="public_rate_limit" class="form-control" min="1" value="{{ $publicRateLimit }}">
+                    <small class="text-muted">{{ __('socialprofile::messages.admin.settings.descriptions.public_rate_limit') }}</small>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">{{ __('socialprofile::messages.admin.settings.token_rate_limit') }}</label>
                     <input type="number" name="token_rate_limit" class="form-control" min="1" value="{{ $tokenRateLimit }}">
+                    <small class="text-muted">{{ __('socialprofile::messages.admin.settings.descriptions.token_rate_limit') }}</small>
                 </div>
                 <div class="col-md-4 d-flex align-items-center">
                     <div class="form-check mt-4">
@@ -31,6 +33,7 @@
                         <label class="form-check-label" for="show_coins_public">
                             {{ __('socialprofile::messages.admin.settings.show_coins_public') }}
                         </label>
+                        <small class="text-muted d-block">{{ __('socialprofile::messages.admin.settings.descriptions.show_coins_public') }}</small>
                     </div>
                 </div>
             </div>
@@ -42,12 +45,14 @@
                         <label class="form-check-label" for="enable_hmac">
                             {{ __('socialprofile::messages.admin.settings.enable_hmac') }}
                         </label>
+                        <small class="text-muted d-block">{{ __('socialprofile::messages.admin.settings.descriptions.enable_hmac') }}</small>
                     </div>
                 </div>
                 <div class="col-md-8">
                     <label class="form-label">{{ __('socialprofile::messages.admin.settings.hmac_secret') }}</label>
                     <input type="text" name="hmac_secret" class="form-control" value="{{ $hmacSecret }}">
                     <small class="text-muted">{{ __('socialprofile::messages.admin.settings.hmac_hint') }}</small>
+                    <small class="text-muted d-block">{{ __('socialprofile::messages.admin.settings.descriptions.hmac_secret') }}</small>
                 </div>
             </div>
             <div class="mt-4">

@@ -27,10 +27,11 @@ class TrustLevelController extends ApiController
         $trust = TrustLevel::firstOrCreate(['user_id' => $user->id]);
         $payload = $request->validated();
         $payload['granted_by'] = $context->actor?->id;
+        $oldLevel = $trust->level ?? TrustLevel::LEVELS[0];
         $trust->fill($payload);
         $trust->save();
 
-        event(new TrustLevelChanged($user, $trust, $context->actor));
+        event(new TrustLevelChanged($user, $trust, $oldLevel, $trust->level, $context->actor));
 
         ActionLogger::log('socialprofile.trust.updated', [
             'user_id' => $user->id,

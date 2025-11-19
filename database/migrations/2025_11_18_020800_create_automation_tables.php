@@ -1,0 +1,63 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('socialprofile_automation_integrations', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('type');
+            $table->json('config')->nullable();
+            $table->boolean('is_default')->default(false);
+            $table->text('description')->nullable();
+            $table->timestamps();
+
+            $table->index('type');
+            $table->index(['type', 'is_default']);
+        });
+
+        Schema::create('socialprofile_automation_rules', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('trigger_type');
+            $table->boolean('enabled')->default(true);
+            $table->integer('priority')->default(0);
+            $table->json('conditions')->nullable();
+            $table->json('actions');
+            $table->text('description')->nullable();
+            $table->timestamps();
+
+            $table->index(['trigger_type', 'enabled', 'priority'], 'automation_rule_trigger_index');
+        });
+
+        Schema::create('socialprofile_automation_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('rule_id')
+                ->nullable()
+                ->constrained('socialprofile_automation_rules')
+                ->nullOnDelete();
+            $table->string('trigger_type');
+            $table->string('status')->default('pending');
+            $table->json('payload')->nullable();
+            $table->json('actions')->nullable();
+            $table->text('error')->nullable();
+            $table->timestamps();
+
+            $table->index('trigger_type');
+            $table->index('status');
+            $table->index('created_at');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('socialprofile_automation_logs');
+        Schema::dropIfExists('socialprofile_automation_rules');
+        Schema::dropIfExists('socialprofile_automation_integrations');
+    }
+};

@@ -12,7 +12,12 @@ class TrustLevelChanged
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public User $user, public TrustLevel $trustLevel, public ?User $actor = null)
-    {
+    public function __construct(
+        public User $user,
+        public TrustLevel $trustLevel,
+        public string $oldLevel,
+        public string $newLevel,
+        public ?User $actor = null
+    ) {
     }
 }

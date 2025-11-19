@@ -88,9 +88,7 @@ composer dump-autoload
 | `socialprofile.admin.users.show` | GET | `/users/{user}` | `social.edit` | Карточка пользователя и метрики. |
 | `socialprofile.admin.users.metrics.update` | POST | `/users/{user}/metrics` | `social.edit` | Обновление очков, активности, монет и статистики. |
 | `socialprofile.admin.users.trust.update` | POST | `/users/{user}/trust` | `social.grant_trust` | Смена уровня доверия. |
-| `socialprofile.admin.users.violations.store` | POST | `/users/{user}/violations` | `social.moderate_violations` | Добавление нарушения из профиля. |
 | `socialprofile.admin.violations.index` | GET | `/violations` | `social.moderate_violations` | Список всех нарушений. |
-| `socialprofile.admin.violations.store` | POST | `/violations` | `social.moderate_violations` | Создание нарушения по ID пользователя. |
 | `socialprofile.admin.violations.destroy` | DELETE | `/violations/{violation}` | `social.moderate_violations` | Удаление записи о нарушении. |
 | `socialprofile.admin.tokens.index` | GET | `/tokens` | `social.manage_tokens` | Просмотр токенов и выдача новых. |
 | `socialprofile.admin.tokens.store` | POST | `/tokens` | `social.manage_tokens` | Создание токена и отображение исходного значения. |

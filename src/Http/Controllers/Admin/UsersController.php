@@ -8,8 +8,6 @@ use Azuriom\Plugin\InspiratoStats\Events\ActivityChanged;
 use Azuriom\Plugin\InspiratoStats\Events\CoinsChanged;
 use Azuriom\Plugin\InspiratoStats\Events\SocialStatsUpdated;
 use Azuriom\Plugin\InspiratoStats\Events\TrustLevelChanged;
-use Azuriom\Plugin\InspiratoStats\Events\ViolationAdded;
-use Azuriom\Plugin\InspiratoStats\Http\Requests\StoreViolationRequest;
 use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateTrustLevelRequest;
 use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
 use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
@@ -120,11 +118,12 @@ class UsersController extends Controller
     public function updateTrust(UpdateTrustLevelRequest $request, User $user)
     {
         $trust = TrustLevel::firstOrCreate(['user_id' => $user->id]);
+        $oldLevel = $trust->level ?? TrustLevel::LEVELS[0];
         $trust->fill($request->validated());
         $trust->granted_by = auth()->id();
         $trust->save();
 
-        event(new TrustLevelChanged($user, $trust, auth()->user()));
+        event(new TrustLevelChanged($user, $trust, $oldLevel, $trust->level, auth()->user()));
 
         ActionLogger::log('socialprofile.admin.trust.updated', [
             'user_id' => $user->id,
@@ -135,22 +134,4 @@ class UsersController extends Controller
         return redirect()->route('socialprofile.admin.users.show', $user)->with('status', __('socialprofile::messages.admin.users.updated'));
     }
 
-    public function storeViolation(StoreViolationRequest $request, User $user)
-    {
-        $payload = $request->validated();
-        $payload['user_id'] = $user->id;
-        $payload['issued_by'] = auth()->id();
-
-        $violation = Violation::create($payload);
-
-        event(new ViolationAdded($user, $violation));
-
-        ActionLogger::log('socialprofile.admin.violation.created', [
-            'user_id' => $user->id,
-            'actor_id' => auth()->id(),
-            'violation_id' => $violation->id,
-        ]);
-
-        return redirect()->route('socialprofile.admin.users.show', $user)->with('status', __('socialprofile::messages.admin.users.updated'));
-    }
 }

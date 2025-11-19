@@ -3,6 +3,7 @@
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\ActivityController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\BundleController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\CoinsController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\CourtCasesController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\SocialScoreController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\StatsController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Api\TrustLevelController;
@@ -17,6 +18,8 @@ Route::middleware('throttle:socialprofile-public')->group(function () {
     Route::get('user/{nickname}/trust-level', [TrustLevelController::class, 'show'])->name('trust.show');
     Route::get('user/{nickname}/violations', [ViolationsController::class, 'index'])->name('violations.index');
     Route::get('user/{nickname}/bundle', [BundleController::class, 'show'])->name('bundle.show');
+
+    Route::get('court/public', [CourtCasesController::class, 'publicIndex'])->name('court.cases.public');
 });
 
 Route::middleware('throttle:socialprofile-token')->group(function () {
@@ -26,4 +29,10 @@ Route::middleware('throttle:socialprofile-token')->group(function () {
     Route::put('user/{nickname}/social-score', [SocialScoreController::class, 'update'])->name('score.update');
     Route::put('user/{nickname}/trust-level', [TrustLevelController::class, 'update'])->name('trust.update');
     Route::post('user/{nickname}/violations', [ViolationsController::class, 'store'])->name('violations.store');
+});
+
+Route::middleware(['throttle:socialprofile-court-internal', 'auth', 'can:social.court.judge'])->group(function () {
+    Route::get('court/cases', [CourtCasesController::class, 'internalIndex'])->name('court.cases.index');
+    Route::post('court/cases', [CourtCasesController::class, 'store'])->name('court.cases.store');
+    Route::get('court/cases/{case}', [CourtCasesController::class, 'show'])->name('court.cases.show');
 });

@@ -17,6 +17,12 @@ class MigrationsTest extends TestCase
             'socialprofile_trust_levels' => ['user_id', 'level', 'granted_by', 'note', 'deleted_at'],
             'socialprofile_violations' => ['user_id', 'type', 'reason', 'points', 'issued_by', 'evidence_url', 'deleted_at'],
             'socialprofile_api_tokens' => ['name', 'token_hash', 'scopes', 'allowed_ips', 'rate_limit', 'created_by'],
+            'socialprofile_timelines' => ['type', 'slug', 'title', 'is_active', 'show_period_labels'],
+            'socialprofile_timeline_periods' => ['timeline_id', 'title', 'start_date', 'end_date', 'position'],
+            'socialprofile_timeline_cards' => ['timeline_id', 'period_id', 'title', 'items', 'is_visible'],
+            'socialprofile_automation_integrations' => ['name', 'type', 'config', 'is_default'],
+            'socialprofile_automation_rules' => ['name', 'trigger_type', 'conditions', 'actions'],
+            'socialprofile_automation_logs' => ['trigger_type', 'status', 'payload', 'actions'],
         ];
 
         foreach ($tables as $table => $columns) {

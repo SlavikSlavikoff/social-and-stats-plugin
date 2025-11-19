@@ -5,11 +5,15 @@
     "autoload": {
         "psr-4": {
             "Azuriom\\Plugin\\InspiratoStats\\": "src/"
-        }
+        },
+        "classmap": [
+            "database/seeders"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
-            "Azuriom\\Plugin\\InspiratoStats\\Tests\\": "tests/"
+            "Azuriom\\Plugin\\InspiratoStats\\Tests\\": "tests/",
+            "Azuriom\\Plugin\\InspiratoStats\\Database\\Factories\\": "database/factories/"
         }
     },
     "replace": {

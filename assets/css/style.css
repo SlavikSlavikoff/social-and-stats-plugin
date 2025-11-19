@@ -1,111 +1,90 @@
+:root {
+    --sp-card-radius: var(--bs-border-radius-lg);
+    --sp-card-padding: 1.5rem;
+    --sp-card-shadow: 0 0.35rem 0.75rem rgba(15, 23, 42, 0.08);
+    --sp-card-border: var(--bs-border-color);
+    --sp-grid-gap: 1rem;
+}
+
 .socialprofile-container {
     padding: 2rem 0;
 }
 
 .socialprofile-card {
-    background: rgba(17, 25, 40, 0.75);
-    border-radius: 16px;
-    padding: 1.75rem;
-    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
-    color: #f8fafc;
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: var(--bs-card-bg);
+    border-radius: var(--sp-card-radius);
+    padding: var(--sp-card-padding);
+    border: 1px solid var(--sp-card-border);
+    box-shadow: var(--sp-card-shadow);
 }
 
-.socialprofile-card .card-title {
+.socialprofile-card h2,
+.socialprofile-card h3 {
     font-size: 1.25rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     font-weight: 600;
-}
-
-.socialprofile-card .avatar {
-    width: 96px;
-    height: 96px;
-    border-radius: 16px;
-    object-fit: cover;
-    box-shadow: 0 15px 30px rgba(15, 23, 42, 0.2);
 }
 
 .metric-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--sp-grid-gap);
 }
 
 .metric-grid div {
-    background: rgba(255, 255, 255, 0.05);
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: var(--bs-border-radius);
     padding: 1rem;
-    border-radius: 12px;
     text-align: center;
+}
+
+[data-bs-theme="dark"] .metric-grid div {
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
 .metric-label {
     display: block;
     text-transform: uppercase;
     font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    color: rgba(226, 232, 240, 0.7);
+    letter-spacing: 0.05em;
+    color: var(--bs-secondary-color);
 }
 
 .metric-value {
     font-size: 1.5rem;
-    font-weight: 700;
-    color: #38bdf8;
-}
-
-.info-card {
-    padding: 1.25rem;
-    min-height: 130px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.stats-card {
-    padding: 1.5rem;
-}
-
-.stats-card .stat-row {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 0.5rem 0;
-}
-
-.stats-card .stat-row:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.socialprofile-admin .socialprofile-card {
-    margin-bottom: 1.5rem;
+    font-weight: 600;
+    color: var(--bs-primary);
 }
 
 .token-scope-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.5rem 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
 }
 
 .token-scope-grid .form-check {
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--sp-card-border);
+    border-radius: var(--bs-border-radius);
     padding: 0.75rem;
-    border-radius: 12px;
+    background-color: var(--bs-body-bg);
+    height: 100%;
 }
 
-.table thead th {
-    text-transform: uppercase;
+.token-scope-grid .form-check-label strong {
+    display: block;
+    font-weight: 600;
+}
+
+.token-scope-grid .form-check-label small {
     font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    color: rgba(148, 163, 184, 0.9);
 }
 
-.table tbody td {
-    color: #e2e8f0;
+.socialprofile-admin .alert {
+    border-radius: var(--bs-border-radius);
 }
 
-.alert {
-    border-radius: 12px;
-}
-
-.badge {
-    border-radius: 999px;
+.socialprofile-admin table th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }

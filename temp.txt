@@ -1,0 +1,379 @@
+<?php
+
+namespace Azuriom\Plugin\InspiratoStats\Providers;
+
+use Azuriom\Extensions\Plugin\BasePluginServiceProvider;
+use Azuriom\Models\Permission;
+use Azuriom\Models\Role;
+use Azuriom\Models\User;
+use Azuriom\Plugin\InspiratoStats\Console\Commands\RunCourtScheduler;
+use Azuriom\Plugin\InspiratoStats\Database\Seeders\CourtTemplateSeeder;
+use Azuriom\Plugin\InspiratoStats\Events\CourtDecisionChanged;
+use Azuriom\Plugin\InspiratoStats\Listeners\DispatchCourtWebhooks;
+use Azuriom\Plugin\InspiratoStats\Listeners\ForwardCourtDecisionToIntegrations;
+use Azuriom\Plugin\InspiratoStats\Models\ActivityPoint;
+use Azuriom\Plugin\InspiratoStats\Models\ApiToken;
+use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
+use Azuriom\Plugin\InspiratoStats\Models\GameStatistic;
+use Azuriom\Plugin\InspiratoStats\Models\CourtTemplate;
+use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
+use Azuriom\Plugin\InspiratoStats\Models\TrustLevel;
+use Azuriom\Plugin\InspiratoStats\Models\Violation;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
+
+class SocialProfileServiceProvider extends BasePluginServiceProvider
+{
+    private const BASELINE_CACHE_KEY = 'socialprofile.seed.version';
+    private const BASELINE_VERSION = 1;
+
+    /**
+     * Register any plugin services.
+     */
+    public function register(): void
+    {
+        $this->registerSeederAutoload();
+        $this->mergeConfigFrom(__DIR__.'/../../config/court.php', 'socialprofile.court');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([RunCourtScheduler::class]);
+        }
+    }
+
+    /**
+     * Bootstrap any plugin services.
+     */
+    public function boot(): void
+    {
+        $this->loadViews();
+        $this->loadTranslations();
+        $this->loadMigrations();
+        $this->seedCourtTemplates();
+        $this->registerPermissions();
+        $this->registerRouteDescriptions();
+        $this->registerAdminNavigation();
+        $this->registerUserNavigation();
+        $this->registerRateLimiters();
+        $this->registerCourtListeners();
+        $this->registerCourtScheduler();
+        $this->initializeUserRecords();
+        $this->registerProfileViewExtensions();
+        $this->registerRoleListener();
+    }
+
+    /**
+     * Returns the routes that should be able to be added to the navbar.
+     *
+     * @return array<string, string>
+     */
+    protected function routeDescriptions(): array
+    {
+        return [
+            'socialprofile.leaderboards.index' => __('socialprofile::messages.leaderboards.title'),
+            'socialprofile.court.index' => __('socialprofile::messages.court.title'),
+            'socialprofile.timelines.season_history' => __('socialprofile::messages.timelines.season_history.title'),
+            'socialprofile.timelines.road_map' => __('socialprofile::messages.timelines.road_map.title'),
+        ];
+    }
+
+    /**
+     * Return the admin navigations routes to register in the dashboard.
+     *
+     * @return array<string, array<string, string>>
+     */
+    protected function adminNavigation(): array
+    {
+        $items = [
+            'socialprofile.admin.dashboard' => [
+                'name' => __('socialprofile::messages.admin.nav.dashboard'),
+                'permission' => 'social.view',
+            ],
+            'socialprofile.admin.users.index' => [
+                'name' => __('socialprofile::messages.admin.nav.users'),
+                'permission' => 'social.edit',
+            ],
+            'socialprofile.admin.violations.index' => [
+                'name' => __('socialprofile::messages.admin.nav.violations'),
+                'permission' => 'social.moderate_violations',
+            ],
+            'socialprofile.admin.tokens.index' => [
+                'name' => __('socialprofile::messages.admin.nav.tokens'),
+                'permission' => 'social.manage_tokens',
+            ],
+            'socialprofile.admin.timelines.index' => [
+                'name' => __('socialprofile::messages.admin.nav.timelines'),
+                'permission' => 'social.timelines.manage',
+            ],
+            'socialprofile.admin.timelines.season_history' => [
+                'name' => __('socialprofile::messages.admin.nav.season_history'),
+                'permission' => 'social.timelines.manage',
+            ],
+            'socialprofile.admin.timelines.road_map' => [
+                'name' => __('socialprofile::messages.admin.nav.road_map'),
+                'permission' => 'social.timelines.manage',
+            ],
+            'socialprofile.admin.court.index' => [
+                'name' => __('socialprofile::messages.admin.nav.court'),
+                'permission' => 'social.court.judge',
+            ],
+            'socialprofile.admin.court.archive' => [
+                'name' => __('socialprofile::messages.admin.nav.court_archive'),
+                'permission' => 'social.court.archive',
+            ],
+            'socialprofile.admin.court.settings' => [
+                'name' => __('socialprofile::messages.admin.nav.court_settings'),
+                'permission' => 'social.court.manage_settings',
+            ],
+            'socialprofile.admin.court.templates.index' => [
+                'name' => __('socialprofile::messages.admin.nav.court_templates'),
+                'permission' => 'social.court.manage_settings',
+            ],
+            'socialprofile.admin.settings.edit' => [
+                'name' => __('socialprofile::messages.admin.nav.settings'),
+                'permission' => 'social.edit',
+            ],
+        ];
+
+        return [
+            'socialprofile-menu' => [
+                'name' => __('socialprofile::messages.admin.nav.menu'),
+                'route' => 'socialprofile.admin.dashboard',
+                'icon' => 'fas fa-users-cog',
+                'type' => 'dropdown',
+                'items' => $items,
+            ],
+        ];
+    }
+
+    /**
+     * Return the user navigations routes to register in the user menu.
+     *
+     * @return array<string, array<string, string>>
+     */
+    protected function userNavigation(): array
+    {
+        return [
+            'leaderboards' => [
+                'name' => __('socialprofile::messages.leaderboards.menu'),
+                'route' => 'socialprofile.leaderboards.index',
+                'icon' => 'fas fa-trophy',
+            ],
+            'court' => [
+                'name' => __('socialprofile::messages.court.menu'),
+                'route' => 'socialprofile.court.index',
+                'icon' => 'fas fa-balance-scale',
+                'permission' => 'social.court.archive',
+            ],
+            'season-history' => [
+                'name' => __('socialprofile::messages.timelines.season_history.title'),
+                'route' => 'socialprofile.timelines.season_history',
+                'icon' => 'fas fa-history',
+            ],
+            'road-map' => [
+                'name' => __('socialprofile::messages.timelines.road_map.title'),
+                'route' => 'socialprofile.timelines.road_map',
+                'icon' => 'fas fa-route',
+            ],
+        ];
+    }
+
+    /**
+     * Register plugin permissions.
+     */
+    protected function registerPermissions(): void
+    {
+        $permissions = [
+            'social.view' => __('socialprofile::messages.permissions.view'),
+            'social.edit' => __('socialprofile::messages.permissions.edit'),
+            'social.grant_trust' => __('socialprofile::messages.permissions.grant_trust'),
+            'social.manage_tokens' => __('socialprofile::messages.permissions.manage_tokens'),
+            'social.moderate_violations' => __('socialprofile::messages.permissions.moderate_violations'),
+            'social.court.judge' => __('socialprofile::messages.permissions.court_judge'),
+            'social.court.archive' => __('socialprofile::messages.permissions.court_archive'),
+            'social.court.manage_settings' => __('socialprofile::messages.permissions.court_settings'),
+            'social.court.webhooks' => __('socialprofile::messages.permissions.court_webhooks'),
+            'social.timelines.manage' => __('socialprofile::messages.permissions.timelines_manage'),
+        ];
+
+        Permission::registerPermissions($permissions);
+    }
+
+    /**
+     * Register the rate limiters used by the plugin.
+     */
+    protected function registerRateLimiters(): void
+    {
+        RateLimiter::for('socialprofile-public', function (Request $request) {
+            $perMinute = (int) setting('socialprofile_public_rate_limit', 60);
+
+            return Limit::perMinute($perMinute)->by($request->ip());
+        });
+
+        RateLimiter::for('socialprofile-token', function (Request $request) {
+            $token = ApiToken::findFromRequest($request);
+            $key = $token?->id ? 'token-'.$token->id : 'ip-'.$request->ip();
+            $limitConfig = $token?->rate_limit ?? [];
+            $perMinute = (int) ($limitConfig['per_minute'] ?? setting('socialprofile_token_rate_limit', 120));
+
+            return Limit::perMinute($perMinute)->by($key);
+        });
+
+        RateLimiter::for('socialprofile-court-public', function (Request $request) {
+            $perMinute = (int) config('socialprofile.court.rate_limits.public_api_per_minute', 60);
+
+            return Limit::perMinute($perMinute)->by($request->ip());
+        });
+
+        RateLimiter::for('socialprofile-court-internal', function (Request $request) {
+            $perMinute = (int) config('socialprofile.court.rate_limits.internal_api_per_minute', 120);
+            $user = $request->user();
+            $key = $user?->id ? 'user-'.$user->id : 'ip-'.$request->ip();
+
+            return Limit::perMinute($perMinute)->by($key);
+        });
+    }
+
+    protected function initializeUserRecords(): void
+    {
+        User::created(function (User $user) {
+            self::ensureDefaultMetrics($user);
+        });
+
+        if (Cache::get(self::BASELINE_CACHE_KEY) === self::BASELINE_VERSION) {
+            return;
+        }
+
+        User::chunk(200, function ($users) {
+            foreach ($users as $user) {
+                self::ensureDefaultMetrics($user);
+            }
+        });
+
+        Cache::forever(self::BASELINE_CACHE_KEY, self::BASELINE_VERSION);
+    }
+
+    protected static function ensureDefaultMetrics(User $user): void
+    {
+        SocialScore::firstOrCreate(['user_id' => $user->id]);
+        ActivityPoint::firstOrCreate(['user_id' => $user->id]);
+        CoinBalance::firstOrCreate(['user_id' => $user->id]);
+        GameStatistic::firstOrCreate(['user_id' => $user->id]);
+        TrustLevel::firstOrCreate(['user_id' => $user->id]);
+    }
+
+    protected function registerRoleListener(): void
+    {
+        Role::updated(function (Role $role) {
+            // TODO:
+            // - Сделать конфигурацию переходов ролей наподобие:
+            //   [
+            //     ['from' => ['X'], 'to' => ['Y'], 'action' => 'whitelist_add'],
+            //     ['from' => ['*'], 'to' => ['Z'], 'action' => 'auto_ban'],
+            //     ['from' => ['Y'], 'to' => ['X'], 'action' => 'whitelist_remove'],
+            //   ]
+            // - Поддержать перечисление ID через запятую и wildcard '*'.
+            // - На основе конфигурации выполнять автоматизацию (вайтлист, бан и т. п.).
+        });
+    }
+
+    protected function registerProfileViewExtensions(): void
+    {
+        View::composer('profile.index', function ($view) {
+            $user = $view->getData()['user'] ?? null;
+
+            if ($user === null) {
+                return;
+            }
+
+            $stats = [
+                'score' => SocialScore::firstOrCreate(['user_id' => $user->id]),
+                'activity' => ActivityPoint::firstOrCreate(['user_id' => $user->id]),
+                'coins' => CoinBalance::firstOrCreate(['user_id' => $user->id]),
+                'stats' => GameStatistic::firstOrCreate(['user_id' => $user->id]),
+                'trust' => TrustLevel::firstOrCreate(['user_id' => $user->id]),
+                'violations' => Violation::where('user_id', $user->id)->latest()->limit(10)->get(),
+            ];
+
+            $view->with('socialProfileStats', $stats);
+
+            $cards = $view->getData()['cards'] ?? [];
+            $cards[] = [
+                'name' => __('socialprofile::messages.profile.statistics'),
+                'view' => 'socialprofile::partials.profile.cards',
+                'data' => $stats,
+            ];
+
+            $cards[] = [
+                'name' => __('socialprofile::messages.profile.recent_violations'),
+                'view' => 'socialprofile::partials.profile.violations',
+                'data' => ['violations' => $stats['violations']],
+            ];
+
+            $view->with('cards', $cards);
+        });
+    }
+
+    protected function registerCourtListeners(): void
+    {
+        Event::listen(CourtDecisionChanged::class, [DispatchCourtWebhooks::class, 'handle']);
+        Event::listen(CourtDecisionChanged::class, [ForwardCourtDecisionToIntegrations::class, 'handle']);
+    }
+
+    protected function registerCourtScheduler(): void
+    {
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->app->booted(function () {
+            $schedule = $this->app->make(Schedule::class);
+            $schedule->command('socialprofile:court:tick')->everyFiveMinutes()->withoutOverlapping();
+        });
+    }
+
+    protected function registerSeederAutoload(): void
+    {
+        spl_autoload_register(function (string $class): void {
+            $prefix = 'Azuriom\\Plugin\\InspiratoStats\\Database\\Seeders\\';
+
+            if (! str_starts_with($class, $prefix) || class_exists($class, false)) {
+                return;
+            }
+
+            $relative = substr($class, strlen($prefix));
+            $relativePath = str_replace('\\', DIRECTORY_SEPARATOR, $relative).'.php';
+            $basePath = dirname(__DIR__, 2).DIRECTORY_SEPARATOR.'database'.DIRECTORY_SEPARATOR.'seeders'.DIRECTORY_SEPARATOR;
+            $path = $basePath.$relativePath;
+
+            if (file_exists($path)) {
+                require_once $path;
+            }
+        });
+    }
+
+    protected function seedCourtTemplates(): void
+    {
+        if (! Schema::hasTable('socialprofile_court_templates')) {
+            return;
+        }
+
+        $flagKey = 'socialprofile_court_templates_seeded';
+        $currentVersion = 1;
+        $storedVersion = (int) setting($flagKey, 0);
+
+        if ($storedVersion === $currentVersion && CourtTemplate::count() > 0) {
+            return;
+        }
+
+        $this->app->call(CourtTemplateSeeder::class);
+        setting()->set($flagKey, $currentVersion);
+    }
+}
+

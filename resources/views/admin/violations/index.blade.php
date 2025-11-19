@@ -12,38 +12,11 @@
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
 
-    <div class="socialprofile-card mb-4">
-        <h3>{{ __('socialprofile::messages.admin.violations.create_title') }}</h3>
-        <form method="POST" action="{{ route('socialprofile.admin.violations.store') }}" class="row g-3">
-            @csrf
-            <div class="col-md-3">
-                <label class="form-label">{{ __('socialprofile::messages.admin.violations.player_id') }}</label>
-                <input type="number" class="form-control" name="user_id" required>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">{{ __('socialprofile::messages.profile.type') }}</label>
-                <select name="type" class="form-select">
-                    @foreach(['warning','mute','ban','other'] as $type)
-                        <option value="{{ $type }}">{{ __('socialprofile::messages.violations.types.' . $type) }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">{{ __('socialprofile::messages.profile.points') }}</label>
-                <input type="number" class="form-control" name="points" min="0" required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">{{ __('socialprofile::messages.profile.reason') }}</label>
-                <input type="text" class="form-control" name="reason" required>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">{{ __('socialprofile::messages.admin.users.evidence') }}</label>
-                <input type="url" class="form-control" name="evidence_url">
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-danger">{{ __('socialprofile::messages.admin.violations.create_button') }}</button>
-            </div>
-        </form>
+    <div class="alert alert-info mb-4">
+        {{ __('socialprofile::messages.admin.violations.redirect_notice') }}
+        <a href="{{ route('socialprofile.court.judge') }}" class="btn btn-sm btn-outline-primary ms-2">
+            <i class="fas fa-gavel me-1"></i>{{ __('socialprofile::messages.court.judge.cta') }}
+        </a>
     </div>
 
     <div class="socialprofile-card">

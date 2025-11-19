@@ -51,6 +51,8 @@ abstract class TestCase extends BaseTestCase
             'social.grant_trust' => 'Manage trust levels',
             'social.manage_tokens' => 'Manage social tokens',
             'social.moderate_violations' => 'Moderate violations',
+            'social.automation.manage' => 'Manage automation settings',
+            'social.timelines.manage' => 'Manage timelines',
         ];
 
         foreach ($permissions as $permission => $description) {
@@ -120,6 +122,16 @@ abstract class TestCase extends BaseTestCase
 
         if (! $settings->has('socialprofile_enable_hmac')) {
             $settings->set('socialprofile_enable_hmac', false);
+        }
+
+        if (! $settings->has('socialprofile_automation_monthly_enabled')) {
+            $defaults = config('socialprofile.automation.monthly_rewards');
+            $settings->set('socialprofile_automation_monthly_enabled', $defaults['enabled']);
+            $settings->set('socialprofile_automation_monthly_day', $defaults['day']);
+            $settings->set('socialprofile_automation_monthly_hour', $defaults['hour']);
+            $settings->set('socialprofile_automation_monthly_limit', $defaults['top_limit']);
+            $settings->set('socialprofile_automation_monthly_sources', $defaults['sources']);
+            $settings->set('socialprofile_automation_monthly_reward', $defaults['reward']);
         }
     }
 }

@@ -11,7 +11,10 @@ use Illuminate\Support\Str;
 
 class TokensController extends Controller
 {
-    protected array $availableScopes = [
+    /**
+     * @var array<int, string>
+     */
+    protected array $scopeKeys = [
         'stats:read',
         'stats:write',
         'activity:read',
@@ -35,7 +38,7 @@ class TokensController extends Controller
 
         return view('socialprofile::admin.tokens.index', [
             'tokens' => $tokens,
-            'availableScopes' => $this->availableScopes,
+            'availableScopes' => $this->getAvailableScopes(),
             'generatedToken' => session('socialprofile_generated_token'),
         ]);
     }
@@ -55,7 +58,7 @@ class TokensController extends Controller
         ApiToken::create([
             'name' => $validated['name'],
             'token_hash' => ApiToken::hash($plainToken),
-            'scopes' => array_values(array_intersect($this->availableScopes, $validated['scopes'])),
+            'scopes' => $this->filterScopes($validated['scopes']),
             'allowed_ips' => $allowedIps,
             'rate_limit' => $validated['rate_limit'] ? ['per_minute' => $validated['rate_limit']] : null,
             'created_by' => auth()->id(),
@@ -82,7 +85,7 @@ class TokensController extends Controller
 
         $token->update([
             'name' => $validated['name'],
-            'scopes' => array_values(array_intersect($this->availableScopes, $validated['scopes'])),
+            'scopes' => $this->filterScopes($validated['scopes']),
             'allowed_ips' => $this->normalizeIps($validated['allowed_ips'] ?? ''),
             'rate_limit' => $validated['rate_limit'] ? ['per_minute' => $validated['rate_limit']] : null,
         ]);
@@ -129,5 +132,35 @@ class TokensController extends Controller
         $ips = array_filter(array_map('trim', preg_split('/[,\n]/', $ips)));
 
         return empty($ips) ? null : array_values($ips);
+    }
+
+    /**
+     * @param array<int, string> $requested
+     * @return array<int, string>
+     */
+    protected function filterScopes(array $requested): array
+    {
+        $valid = array_intersect($requested, $this->scopeKeys);
+
+        return array_values(array_unique($valid));
+    }
+
+    /**
+     * @return array<string, array<string, string>>
+     */
+    protected function getAvailableScopes(): array
+    {
+        $scopes = [];
+
+        foreach ($this->scopeKeys as $scope) {
+            $normalized = str_replace(':', '_', $scope);
+
+            $scopes[$scope] = [
+                'label' => "socialprofile::messages.admin.tokens.scope_labels.$normalized",
+                'description' => "socialprofile::messages.admin.tokens.scope_descriptions.$normalized",
+            ];
+        }
+
+        return $scopes;
     }
 }

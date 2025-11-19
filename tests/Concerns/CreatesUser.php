@@ -19,6 +19,11 @@ trait CreatesUser
             ->create($attributes);
     }
 
+    protected function createUser(array $attributes = []): User
+    {
+        return $this->createBasicUser($attributes);
+    }
+
     protected function createAdminUser(array $attributes = []): User
     {
         $role = Role::factory()->admin()->create();
