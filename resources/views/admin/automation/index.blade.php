@@ -362,6 +362,7 @@
             'action' => [],
             'integrations' => $integrations,
             'actionTypes' => $actionTypes,
+            'roles' => $roles,
         ])->render()) !!}
     </template>
 @endonce

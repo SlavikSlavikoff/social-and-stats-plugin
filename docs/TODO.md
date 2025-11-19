@@ -1,4 +1,4 @@
-# TODO
+﻿# TODO
 
 ## listeners
-- [ ] Wire Minecraft/server/bot integrations to `ForwardCourtDecisionToIntegrations` once endpoints are available.
+- [ ] Подключить интеграции Minecraft/сервер/ботов к `ForwardCourtDecisionToIntegrations`, когда соответствующие эндпоинты будут готовы.

@@ -12,7 +12,10 @@ class ViolationAdded
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public User $user, public Violation $violation)
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function __construct(public User $user, public Violation $violation, public array $context = [])
     {
     }
 }

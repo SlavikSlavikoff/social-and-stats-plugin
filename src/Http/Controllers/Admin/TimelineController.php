@@ -5,8 +5,10 @@ namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin;
 use Azuriom\Http\Controllers\Controller;
 use Azuriom\Plugin\InspiratoStats\Http\Requests\TimelineRequest;
 use Azuriom\Plugin\InspiratoStats\Models\Timeline;
+use Azuriom\Plugin\InspiratoStats\Support\TimelineCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class TimelineController extends Controller
@@ -34,6 +36,7 @@ class TimelineController extends Controller
     public function store(TimelineRequest $request): RedirectResponse
     {
         $timeline = Timeline::create($this->timelinePayload($request));
+        TimelineCache::forgetForTimeline($timeline);
 
         return redirect()
             ->route('socialprofile.admin.timelines.edit', $timeline)
@@ -50,6 +53,8 @@ class TimelineController extends Controller
             ->withCount('cards')
             ->orderBy('position')
             ->get();
+        $visiblePeriods = $this->resolveVisiblePeriods($periods, $periodFilter);
+        $visiblePeriodIds = $visiblePeriods->pluck('id');
 
         $cardsQuery = $timeline->cards()
             ->with('period')
@@ -65,12 +70,16 @@ class TimelineController extends Controller
             $cardsQuery->where('is_visible', false);
         }
 
-        $cards = $cardsQuery->get()->groupBy('period_id');
+        $cards = $visiblePeriodIds->isEmpty()
+            ? collect()
+            : $cardsQuery->whereIn('period_id', $visiblePeriodIds)->get()->groupBy('period_id');
 
         return view('socialprofile::admin.timelines.edit', [
             'timeline' => $timeline,
             'tab' => in_array($tab, ['settings', 'periods', 'cards'], true) ? $tab : 'settings',
             'periods' => $periods,
+            'visiblePeriods' => $visiblePeriods,
+            'limitedPeriods' => $visiblePeriods->count() < $periods->count(),
             'cards' => $cards,
             'filters' => [
                 'period_id' => $periodFilter,
@@ -82,6 +91,7 @@ class TimelineController extends Controller
     public function update(TimelineRequest $request, Timeline $timeline): RedirectResponse
     {
         $timeline->update($this->timelinePayload($request, $timeline));
+        TimelineCache::forgetForTimeline($timeline);
 
         return redirect()
             ->route('socialprofile.admin.timelines.edit', ['timeline' => $timeline, 'tab' => 'settings'])
@@ -90,7 +100,11 @@ class TimelineController extends Controller
 
     public function destroy(Timeline $timeline): RedirectResponse
     {
+        $type = $timeline->type;
         $timeline->delete();
+        if ($type !== null) {
+            TimelineCache::forget($type);
+        }
 
         return redirect()
             ->route('socialprofile.admin.timelines.index')
@@ -113,5 +127,29 @@ class TimelineController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * @return Collection<int, Timeline>
+     */
+    protected function resolveVisiblePeriods(Collection $periods, ?int $periodFilter): Collection
+    {
+        if ($periods->isEmpty()) {
+            return $periods;
+        }
+
+        if ($periodFilter === null) {
+            return $periods->take(3);
+        }
+
+        $index = $periods->search(static fn ($period) => $period->id === $periodFilter);
+
+        if ($index === false) {
+            return $periods->take(3);
+        }
+
+        $start = max($index - 1, 0);
+
+        return $periods->slice($start, 3)->values();
     }
 }

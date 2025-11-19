@@ -12,7 +12,10 @@ class CoinsChanged
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public User $user, public CoinBalance $coins, public ?string $context = null)
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function __construct(public User $user, public CoinBalance $coins, public array $context = [])
     {
     }
 }

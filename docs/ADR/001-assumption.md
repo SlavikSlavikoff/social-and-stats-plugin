@@ -1,18 +1,18 @@
-# ADR 001 — Court lifecycle assumptions
+﻿# ADR 001 — предположения о жизненном цикле Суда
 
-Date: 2025-11-18
+Дата: 2025-11-18
 
-## Context
+## Контекст
 
-The functional specification for the «Суд» module references «жизненный цикл дела», статусы, роль возврата наказаний и режимы «исполнителей». The document does not prescribe exact value sets, duration units, or where configuration should live.
+Функциональная спецификация раздела «Суд» упоминает «жизненный цикл дела», статусы, роль возврата наказаний и режимы «исполнителей», но не фиксирует точные наборы значений, единицы длительности и место хранения конфигурации.
 
-## Assumptions
+## Предположения
 
-1. **Case statuses** — the lifecycle will use the enum `draft`, `issued`, `active`, `awaiting_revert`, `completed`, `cancelled`, `revoked`. «Active» means punishments are currently taking effect; `awaiting_revert` marks items scheduled for scheduler rollback; `completed` and `revoked` are terminal states.
-2. **Executors** — to reflect «исполнители (site/discord/minecraft)» every case stores `executor` from this closed set. UI defaults to `site`; Discord/Minecraft flows will later reuse API endpoints.
-3. **Duration units** — ban/mute durations are stored in minutes to match existing Azuriom moderation helpers. For configurability the UI accepts minutes and human-readable shortcuts (e.g., `3h`, `6m`), normalized server-side to minutes.
-4. **Template storage** — template definitions are persisted in DB (`socialprofile_court_templates`) with defaults seeded from config so admins can edit them without code deployment.
-5. **Role mapping** — configuration exposes `ban_role`, `mute_role`, and `novice_role` setting keys that contain Azuriom role IDs. Applying punishments swaps these roles and scheduler restores previous assignments.
-6. **Webhook retries** — webhook deliveries are persisted with status (`pending`,`sent`,`failed`) and retried via the same scheduler command to satisfy audit and observability requirements.
+1. **Статусы дела.** Жизненный цикл использует перечисление `draft`, `issued`, `active`, `awaiting_revert`, `completed`, `cancelled`, `revoked`. `active` — наказания действуют; `awaiting_revert` — есть задачи для отката; `completed` и `revoked` — финальные состояния.
+2. **Исполнители.** Чтобы покрыть сценарии «site/discord/minecraft», каждое дело хранит поле `executor` из закрытого списка. В UI по умолчанию `site`; Discord/Minecraft будут передаваться через API позже.
+3. **Единицы длительности.** Бан/мут сохраняются в минутах, чтобы совпадать с инструментами Azuriom. Для удобства UI принимает целые минуты и шорткаты (`3h`, `6m`), а на сервере всё нормализуется в минуты.
+4. **Хранение шаблонов.** Описания шаблонов лежат в таблице `socialprofile_court_templates`, а дефолты берутся из конфига и могут быть обновлены админами без деплоя.
+5. **Связка ролей.** Конфигурация содержит ключи `ban_role`, `mute_role`, `novice_role` с ID ролей Azuriom. При выдаче наказаний роли меняются, а планировщик возвращает исходные значения.
+6. **Повтор вебхуков.** Доставки вебхуков сохраняются со статусами (`pending`, `sent`, `failed`) и переотправляются тем же планировщиком для соблюдения требований аудита и наблюдаемости.
 
-All downstream code honours these assumptions; any future change requires a new ADR.
+Весь код ниже опирается на эти предположения; любые изменения фиксируются новой ADR.

@@ -7,10 +7,10 @@ use Azuriom\Plugin\InspiratoStats\Http\Requests\TimelinePeriodOrderRequest;
 use Azuriom\Plugin\InspiratoStats\Http\Requests\TimelinePeriodRequest;
 use Azuriom\Plugin\InspiratoStats\Models\Timeline;
 use Azuriom\Plugin\InspiratoStats\Models\TimelinePeriod;
+use Azuriom\Plugin\InspiratoStats\Support\TimelineCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\DB;
 
 class TimelinePeriodController extends Controller
 {
@@ -42,6 +42,7 @@ class TimelinePeriodController extends Controller
         $data['position'] = $data['position'] ?? (($timeline->periods()->max('position') ?? 0) + 1);
 
         $timeline->periods()->create($data);
+        TimelineCache::forgetForTimeline($timeline);
 
         return redirect()
             ->route('socialprofile.admin.timelines.edit', ['timeline' => $timeline, 'tab' => 'periods'])
@@ -69,6 +70,7 @@ class TimelinePeriodController extends Controller
         }
 
         $period->update($data);
+        TimelineCache::forgetForTimeline($timeline);
 
         return redirect()
             ->route('socialprofile.admin.timelines.edit', ['timeline' => $timeline, 'tab' => 'periods'])
@@ -79,6 +81,7 @@ class TimelinePeriodController extends Controller
     {
         $this->ensurePeriod($timeline, $period);
         $period->delete();
+        TimelineCache::forgetForTimeline($timeline);
 
         return redirect()
             ->route('socialprofile.admin.timelines.edit', ['timeline' => $timeline, 'tab' => 'periods'])
@@ -89,16 +92,40 @@ class TimelinePeriodController extends Controller
     {
         $items = collect($request->validated('items'));
         $periods = $timeline->periods()->get()->keyBy('id');
+        $timestamp = now();
+        $records = [];
 
-        DB::transaction(function () use ($items, $periods) {
-            foreach ($items as $item) {
-                if (isset($periods[$item['id']])) {
-                    $periods[$item['id']]->update(['position' => $item['position']]);
-                }
+        foreach ($items as $item) {
+            if (! isset($periods[$item['id']])) {
+                continue;
             }
-        });
 
-        return response()->json(['status' => 'ok']);
+            $records[] = [
+                'id' => $item['id'],
+                'position' => $item['position'],
+                'updated_at' => $timestamp,
+            ];
+        }
+
+        $updated = 0;
+
+        if ($records !== []) {
+            TimelinePeriod::withoutEvents(function () use ($records, &$updated): void {
+                foreach ($records as $record) {
+                    $updated += TimelinePeriod::whereKey($record['id'])->update([
+                        'position' => $record['position'],
+                        'updated_at' => $record['updated_at'],
+                    ]);
+                }
+            });
+
+            TimelineCache::forgetForTimeline($timeline);
+        }
+
+        return response()->json([
+            'status' => 'ok',
+            'updated' => $updated,
+        ]);
     }
 
     protected function ensurePeriod(Timeline $timeline, TimelinePeriod $period): void

@@ -15,7 +15,12 @@ class StatsController extends ApiController
     {
         $user = $this->resolveUser($nickname);
         $context = $this->access($request, 'stats:read', $user);
-        $stats = GameStatistic::firstOrCreate(['user_id' => $user->id]);
+        $stats = $this->metricOrNew(GameStatistic::class, $user->id, [
+            'played_minutes' => 0,
+            'kills' => 0,
+            'deaths' => 0,
+            'extra_metrics' => [],
+        ]);
 
         return $this->resourceResponse(GameStatisticResource::makeWithAccess($stats, $context->hasFullAccess));
     }
@@ -25,10 +30,19 @@ class StatsController extends ApiController
         $user = $this->resolveUser($nickname);
         $context = $this->access($request, 'stats:write', $user, true);
         $stats = GameStatistic::firstOrCreate(['user_id' => $user->id]);
+        $before = $stats->only(['played_minutes', 'kills', 'deaths']);
         $stats->fill($request->validated());
         $stats->save();
 
-        event(new SocialStatsUpdated($user, $stats));
+        event(new SocialStatsUpdated($user, $stats, [
+            'values' => $stats->only(['played_minutes', 'kills', 'deaths']),
+            'delta' => [
+                'played_minutes' => ($stats->played_minutes ?? 0) - ($before['played_minutes'] ?? 0),
+                'kills' => ($stats->kills ?? 0) - ($before['kills'] ?? 0),
+                'deaths' => ($stats->deaths ?? 0) - ($before['deaths'] ?? 0),
+            ],
+            'source' => 'api',
+        ]));
 
         ActionLogger::log('socialprofile.stats.updated', [
             'user_id' => $user->id,

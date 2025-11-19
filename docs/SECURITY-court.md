@@ -1,52 +1,52 @@
-# Court security model
+﻿# Модель безопасности Court
 
-## Permissions
+## Права доступа
 
-| Permission | Purpose |
-|------------|---------|
-| `social.court.judge` | Access Court page, issue decisions, internal API |
-| `social.court.archive` | View card archive (`/court`, admin archive) |
-| `social.court.manage_settings` | Edit Court settings (roles, limits, templates) |
-| `social.court.webhooks` | Manage webhook endpoints |
+| Право | Назначение |
+|-------|-----------|
+| `social.court.judge` | Доступ к странице Court, вынесение решений, внутренний API |
+| `social.court.archive` | Просмотр архива (`/court` и страница в админке) |
+| `social.court.manage_settings` | Настройка ролей, лимитов и шаблонов |
+| `social.court.webhooks` | Управление вебхуками |
 
-Admin navigation respects these roles; the `/court` front-end route is wrapped in `auth + can:social.court.archive`.
+Навигация админки учитывает эти права; маршрут `/court` обёрнут в `auth + can:social.court.archive`.
 
-## Rate limiting
+## Лимиты
 
-- Public API throttle (`socialprofile-court-public`): default 60 requests/min/IP (`config/socialprofile.court.rate_limits`).
-- Internal API throttle (`socialprofile-court-internal`): default 120 RPM per user or IP.
-- Service-level guard rails:
-  - `setting('socialprofile_court_judge_hour_limit')` (# cases per judge per hour, default 30).
-  - `setting('socialprofile_court_user_daily_limit')` (# cases per player per day, default 3).
-  - Metric deltas clamped to `config('socialprofile.court.limits.metric_delta_*')`.
+- Публичный API (`socialprofile-court-public`) — 60 запросов/мин./IP (`config/socialprofile.court.rate_limits`).
+- Внутренний API (`socialprofile-court-internal`) — 120 RPM на пользователя/IP.
+- Дополнительные ограничители:
+  - `setting('socialprofile_court_judge_hour_limit')` — дел в час на судью (по умолчанию 30).
+  - `setting('socialprofile_court_user_daily_limit')` — дел в сутки на игрока (по умолчанию 3).
+  - Дельты метрик ограничены `config('socialprofile.court.limits.metric_delta_*')`.
 
-## Visibility & archive
+## Видимость и архив
 
-- Case `visibility`: `private`, `judges`, `public`. Admin UI defaults to `setting('socialprofile_court_default_visibility', 'judges')`.
-- `/api/social/v1/court/public` exposes only `public`.
-- `/court` + admin archive show `public` + `judges` entries if viewer has `social.court.archive`.
+- Поле `visibility`: `private`, `judges`, `public`. По умолчанию берётся `setting('socialprofile_court_default_visibility', 'judges')`.
+- `/api/social/v1/court/public` отдаёт только публичные дела.
+- `/court` и архив админки показывают `public` + `judges`, если у пользователя есть `social.court.archive`.
 
-## Webhook delivery
+## Доставка вебхуков
 
-- Optional HMAC header `X-Court-Signature` (SHA256) when secret is set.
-- Persistent retry queue, max attempts configurable.
-- Delivery log (status + response) kept for auditing.
+- Опциональный заголовок HMAC `X-Court-Signature` (SHA256), если секрет задан.
+- Устойчивая очередь повторных попыток, число ретраев настраивается.
+- Логи (статус + ответ) хранятся для аудита.
 
-## Scheduler safety
+## Безопасность планировщика
 
-- `socialprofile:court:tick` uses DB transactions, marks jobs `pending → running → completed/failed`.
-- Jobs failing due to missing users/actions log the error and reschedule (5 min).
-- Role snapshots stored before each change (`socialprofile_court_state_snapshots`), guaranteeing reversible transitions.
+- `socialprofile:court:tick` использует транзакции, отмечает задания статусами `pending → running → completed/failed`.
+- Ошибки из-за отсутствующих пользователей/действий логируются и переносят задачу на +5 минут.
+- Перед сменой ролей сохраняется снапшот (`socialprofile_court_state_snapshots`), что гарантирует обратимость.
 
-## Validation
+## Валидация
 
-- Comments capped (5000 chars).
-- Durations validated + normalised to minutes.
-- Role-based actions require configured role IDs; otherwise request rejected.
-- API & forms enforce valid player nickname and enforce attachments (URLs only).
+- Комментарии ограничены 5000 символами.
+- Длительности валидируются и нормализуются в минуты.
+- Ролевые действия требуют настроенных ID ролей; иначе запрос отклоняется.
+- Формы и API проверяют существование игрока и URL вложений.
 
-## Audit/logging
+## Аудит и логи
 
-- `socialprofile_court_logs` records each event with actor + payload.
-- Webhook deliveries and revert jobs provide traceability.
-- All database tables include timestamps for forensic analysis; indexes on `user_id`, `judge_id`, `status`, `created_at`, `expires_at` accelerate audits.
+- `socialprofile_court_logs` фиксирует каждое событие с актором и набором данных.
+- Очереди вебхуков и откатов дают трассировку.
+- Во всех таблицах есть временные метки и индексы по `user_id`, `judge_id`, `status`, `created_at`, `expires_at` для ускоренного анализа.

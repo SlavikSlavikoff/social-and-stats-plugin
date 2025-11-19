@@ -76,7 +76,10 @@ class AutomationServiceTest extends TestCase
     {
         $service = $this->app->make(AutomationService::class);
         $user = $this->createUser();
-        $activity = ActivityPoint::create(['user_id' => $user->id, 'points' => 120]);
+        $activity = ActivityPoint::updateOrCreate(
+            ['user_id' => $user->id],
+            ['points' => 120]
+        );
 
         AutomationRule::factory()->create([
             'trigger_type' => AutomationRule::TRIGGER_ACTIVITY_CHANGED,

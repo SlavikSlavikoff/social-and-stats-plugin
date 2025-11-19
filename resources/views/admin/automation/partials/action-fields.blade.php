@@ -3,6 +3,7 @@
     $config = data_get($action, 'config', []);
     $integrationId = data_get($action, 'integration_id');
     $continueOnError = (bool) data_get($action, 'continue_on_error', false);
+    $availableRoles = $roles ?? [];
 @endphp
 <div class="automation-action border rounded p-3 mb-3" data-action-block>
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -109,7 +110,7 @@
         <label class="form-label">{{ __('socialprofile::messages.admin.automation.rules.actions.assign_role') }}</label>
         <select class="form-select" name="actions[{{ $index }}][config][role_id]">
             <option value="">{{ __('socialprofile::messages.admin.automation.rules.actions.assign_role_help') }}</option>
-            @foreach($roles as $role)
+            @foreach($availableRoles as $role)
                 <option value="{{ $role->id }}" @selected((int) ($config['role_id'] ?? 0) === $role->id)>{{ $role->name }}</option>
             @endforeach
         </select>

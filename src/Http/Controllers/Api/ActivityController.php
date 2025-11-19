@@ -15,7 +15,7 @@ class ActivityController extends ApiController
     {
         $user = $this->resolveUser($nickname);
         $context = $this->access($request, 'activity:read', $user);
-        $activity = ActivityPoint::firstOrCreate(['user_id' => $user->id]);
+        $activity = $this->metricOrNew(ActivityPoint::class, $user->id, ['points' => 0]);
 
         return $this->resourceResponse(ActivityResource::makeWithAccess($activity, $context->hasFullAccess));
     }
@@ -25,10 +25,15 @@ class ActivityController extends ApiController
         $user = $this->resolveUser($nickname);
         $context = $this->access($request, 'activity:write', $user, true);
         $activity = ActivityPoint::firstOrCreate(['user_id' => $user->id]);
+        $before = (int) $activity->points;
         $activity->fill($request->validated());
         $activity->save();
 
-        event(new ActivityChanged($user, $activity));
+        event(new ActivityChanged($user, $activity, [
+            'delta' => (int) $activity->points - $before,
+            'source' => 'api',
+            'payload' => $request->validated(),
+        ]));
 
         ActionLogger::log('socialprofile.activity.updated', [
             'user_id' => $user->id,

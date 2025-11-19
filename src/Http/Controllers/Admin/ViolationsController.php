@@ -41,7 +41,9 @@ class ViolationsController extends Controller
             'evidence_url' => $validated['evidence_url'] ?? null,
         ]);
 
-        event(new ViolationAdded($user, $violation));
+        event(new ViolationAdded($user, $violation, [
+            'source' => 'admin.manual',
+        ]));
 
         ActionLogger::log('socialprofile.admin.violation.created', [
             'violation_id' => $violation->id,

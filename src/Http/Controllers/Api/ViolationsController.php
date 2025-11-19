@@ -35,7 +35,10 @@ class ViolationsController extends ApiController
 
         $violation = Violation::create($payload);
 
-        event(new ViolationAdded($user, $violation));
+        event(new ViolationAdded($user, $violation, [
+            'source' => 'api',
+            'payload' => $payload,
+        ]));
 
         ActionLogger::log('socialprofile.violation.created', [
             'user_id' => $user->id,

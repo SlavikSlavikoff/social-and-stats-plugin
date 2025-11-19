@@ -1,10 +1,10 @@
-# Role Automation Roadmap
+﻿# План автоматизации ролей
 
-## Purpose
+## Цель
 
-We plan to automate reactions to Azuriom role changes (e.g., auto whitelist add/remove, auto-ban) based on flexible configuration. The current codebase only installs a placeholder listener (see `SocialProfileServiceProvider::registerRoleListener()`).
+Мы хотим автоматизировать реакции на смены ролей в Azuriom (например, автодобавление/удаление whitelist, autoban) на основе гибкой конфигурации. Сейчас код содержит только заглушку-слушатель (`SocialProfileServiceProvider::registerRoleListener()`).
 
-## Pending TODO (from service provider)
+## Актуальные TODO (из service provider)
 
 ```php
 // TODO:
@@ -18,22 +18,22 @@ We plan to automate reactions to Azuriom role changes (e.g., auto whitelist add/
 // - На основе конфигурации выполнять автоматизацию (вайтлист, бан и т. п.).
 ```
 
-## Implementation Plan
+## План реализации
 
-1. **Configuration file**  
-   Define transitions in `config/socialprofile_roles.php`, allowing:
-   - `from` & `to` arrays (IDs or `*`).
-   - Named `action` (e.g., `whitelist_add`, `whitelist_remove`, `auto_ban`).
-   - Optional metadata (e.g., target whitelist name, ban reason).
+1. **Файл конфигурации.**
+   Задаём переходы в `config/socialprofile_roles.php`, где:
+   - `from` и `to` — массивы ID или `*`;
+   - `action` — название действия (`whitelist_add`, `whitelist_remove`, `auto_ban` и т. п.);
+   - `meta` — дополнительные данные (например, имя whitelist, причина бана).
 
-2. **Observer logic**  
-   Listen to role changes on users (preferably `User::updated` and `isDirty('role_id')`), match transitions by old/new role, and dispatch jobs.
+2. **Логика наблюдателя.**
+   Слушаем изменения ролей у пользователей (например, `User::updated` и `isDirty('role_id')`), подбираем подходящие переходы и отправляем задания.
 
-3. **Action handlers**  
-   Implement service classes or jobs per action to interact with whitelists, bans, etc. Provide extension hooks so projects can register their own handler classes.
+3. **Обработчики действий.**
+   Реализуем сервисы/джобы для каждого действия (работа со списками, банами и т. д.). Важно позволить проектам регистрировать свои обработчики.
 
-4. **Editing transitions**  
-   Configuration uses simple arrays with IDs (comma-separated strings interpreted at boot). Example:
+4. **Редактирование переходов.**
+   Конфигурация — простой массив с ID (можно хранить строку с запятыми и разбирать при загрузке). Пример:
 
    ```php
    [
@@ -44,8 +44,8 @@ We plan to automate reactions to Azuriom role changes (e.g., auto whitelist add/
    ]
    ```
 
-5. **Testing roadmap**
-   - Unit tests for transition matching and parsing the config.
-   - Feature tests simulating role change on a user.
+5. **Тестирование.**
+   - Unit: проверка сопоставления переходов и парсинга конфига.
+   - Feature: эмуляция смены роли у пользователя.
 
-This file should be updated once the roadmap is implemented. For now it documents expectations and provides guidance for future work. 
+Файл нужно обновить, когда дорожная карта будет реализована; сейчас он фиксирует ожидания и подсказки для будущей разработки.

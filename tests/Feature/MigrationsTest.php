@@ -23,6 +23,13 @@ class MigrationsTest extends TestCase
             'socialprofile_automation_integrations' => ['name', 'type', 'config', 'is_default'],
             'socialprofile_automation_rules' => ['name', 'trigger_type', 'conditions', 'actions'],
             'socialprofile_automation_logs' => ['trigger_type', 'status', 'payload', 'actions'],
+            'socialprofile_ratings' => ['slug', 'name', 'type', 'scale_min', 'scale_max'],
+            'socialprofile_user_ratings' => ['user_id', 'rating_id', 'value'],
+            'socialprofile_rating_thresholds' => ['rating_id', 'value', 'label', 'direction', 'is_punishment', 'band_min', 'band_max'],
+            'socialprofile_rating_threshold_actions' => ['threshold_id', 'action', 'config'],
+            'socialprofile_rating_rules' => ['rating_id', 'name', 'trigger_key', 'delta'],
+            'socialprofile_rating_events' => ['rating_id', 'user_id', 'amount'],
+            'socialprofile_rating_user_thresholds' => ['threshold_id', 'user_id', 'direction', 'reached_at'],
         ];
 
         foreach ($tables as $table => $columns) {

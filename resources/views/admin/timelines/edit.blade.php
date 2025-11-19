@@ -70,6 +70,8 @@
                 @include('socialprofile::admin.timelines.cards.index', [
                     'timeline' => $timeline,
                     'periods' => $periods,
+                    'visiblePeriods' => $visiblePeriods,
+                    'limitedPeriods' => $limitedPeriods,
                     'cards' => $cards,
                     'filters' => $filters,
                 ])

@@ -1,34 +1,34 @@
-# Court usage guide
+﻿# Руководство по использованию Court
 
-## Issuing a decision
+## Как вынести решение
 
-1. Open **/court/judge** (user must have the `social.court.judge` permission).
-2. Pick one of the forms:
-   - **Auto punishment** — choose a template, optionally add a comment/continued case and click *Issue auto punishment*.
-   - **Manual punishment** — fill the deltas (metrics, coins, money), ban/mute durations, role swap and evidence links.
-3. Submit the form. The service validates limits, stores the case, applies actions and triggers webhooks.
+1. Откройте **/court/judge** (нужно право `social.court.judge`).
+2. Выберите форму:
+   - **Auto punishment** (автоматический режим) — выберите шаблон, при необходимости добавьте комментарий/идентификатор предыдущего дела и нажмите *Issue auto punishment*.
+   - **Manual punishment** (ручной режим) — укажите дельты метрик/монет, длительности бан/мут, смену роли и ссылки на доказательства.
+3. Отправьте форму. Сервис проверит лимиты, создаст дело, применит действия и запустит вебхуки.
 
-> The old form inside the admin panel is now read-only and simply links to this workspace.
+> Старая форма в админке теперь только для чтения и ведёт на новое рабочее место.
 
-## Revoking or extending a punishment
+## Как отменить или продлить наказание
 
-- Set the desired metric delta or duration to `0` to cancel a timer.
-- Issue a follow-up case referencing the previous ID in the **Continued case** field if you need to extend the same punishment.
+- Установите нужную дельту/длительность в `0`, чтобы отменить таймер.
+- Создайте следующее дело и укажите идентификатор предыдущего в поле **Continued case**, если требуется продлить существующее наказание.
 
-## Managing templates
+## Управление шаблонами
 
-1. Go to **Admin -> Social Profile -> Court -> Templates** (permission `social.court.manage_settings`).
-2. Edit or create templates (name, key, default executor, payload JSON).
-3. Use **Refresh from config** to re-import defaults from `config/court.php`.
+1. Откройте **Admin → Social Profile → Court → Templates** (право `social.court.manage_settings`).
+2. Редактируйте или создавайте шаблоны (имя, key, исполнитель по умолчанию, JSON-данные).
+3. Нажмите **Refresh from config**, чтобы снова импортировать дефолтные значения из `config/court.php`.
 
-## Webhooks
+## Вебхуки
 
-- Configure under **Admin -> Court -> Settings -> Webhooks**.
-- Each webhook stores URL, optional secret and events (`issued`, `updated`, `reverted`).
-- Full form/payload/queue breakdown: [`docs/WEBHOOKS-court.md`](WEBHOOKS-court.md).
+- Настраиваются в **Admin → Court → Settings → Webhooks**.
+- Каждая запись хранит URL, секрет (опция) и список событий (`issued`, `updated`, `reverted`).
+- Детали форм, тел запросов и очередей — в [`docs/WEBHOOKS-court.md`](WEBHOOKS-court.md).
 
-## Rate limits & safety
+## Лимиты и безопасность
 
-- Judges have hourly and per-subject daily limits (see court settings).
-- The public archive requires `social.court.archive`; the judge workspace requires `social.court.judge`.
-- API tokens expose dedicated scopes (see the Tokens page descriptions).
+- Для судей действуют почасовые и суточные ограничения на количество дел (параметры в настройках).
+- Публичный архив требует `social.court.archive`, рабочее место — `social.court.judge`.
+- API-токены имеют отдельные scope (описания см. на странице токенов).

@@ -1,15 +1,15 @@
-# ADR 002 — API payload conventions
+﻿# ADR 002 — соглашения о форматах API
 
-Date: 2025-11-18
+Дата: 2025-11-18
 
-## Context
+## Контекст
 
-The specification mentions «Ник нарушителя вводится вручную» for the UI, while earlier requirements for bots/server integrations discussed an API/webhook without defining identifier formats. To keep API calls deterministic we needed to choose identifiers and duration formats.
+Спецификация упоминает требование «Ник нарушителя вводится вручную» для UI, но ранее обсуждались боты/интеграции без явных форматов идентификаторов. Чтобы API работал детерминированно, нужно зафиксировать идентификаторы и форму длительности наказаний.
 
-## Assumptions
+## Предположения
 
-1. **Internal API uses user IDs** — `/api/social/v1/court/cases` expects `subject_id` (numeric). UI keeps the nickname input for judges, but programmatic integrations send stable IDs retrieved from other API endpoints.
-2. **Duration strings** — API and forms accept integers (minutes) as well as `3h`, `30d`, `6m` shortcuts (hours/days/months). `0` is reserved for cancellation and negative numbers are rejected.
-3. **Executor declaration** — bots must set `executor` to one of `site|discord|minecraft` so downstream listeners know which channel produced the decision.
+1. **Внутренний API использует ID.** Эндпоинт `/api/social/v1/court/cases` принимает `subject_id` (число). В интерфейсе судьи поле с ником сохраняется, но интеграции отправляют стабильные ID, полученные из других API.
+2. **Строки длительности.** API и формы принимают целые минуты и шорткаты `3h`, `30d`, `6m` (часы/дни/месяцы). `0` зарезервирован для отмены, отрицательные значения запрещены.
+3. **Указание исполнителя.** Боты передают `executor` из множества `site|discord|minecraft`, чтобы слушатели понимали, из какого канала пришло решение.
 
-Any change to identifiers or duration grammar must update this ADR plus the validation layer.
+Любое изменение идентификаторов или грамматики длительности требует обновить эту ADR и слой валидации.

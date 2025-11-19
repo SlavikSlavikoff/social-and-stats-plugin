@@ -1,5 +1,5 @@
 @if($violations->isEmpty())
-    <p class="text-muted mb-0">{{ __('socialprofile::messages.profile.empty_state') }}</p>
+    <p class="text-muted mb-0">{{ __('socialprofile::messages.profile.modals.empty_violations') }}</p>
 @else
     <div class="table-responsive">
         <table class="table table-sm align-middle mb-0">

@@ -9,6 +9,10 @@ use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\CourtArchiveController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\CourtSettingsController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\CourtTemplatesController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\DashboardController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\ProgressionRatingsController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\ProgressionRulesController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\ProgressionThresholdActionsController;
+use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\ProgressionThresholdsController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\SettingsController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\TimelineCardController;
 use Azuriom\Plugin\InspiratoStats\Http\Controllers\Admin\TimelineController;
@@ -82,6 +86,30 @@ Route::get('/settings', [SettingsController::class, 'edit'])
 Route::post('/settings', [SettingsController::class, 'update'])
     ->middleware('can:social.edit')
     ->name('settings.update');
+
+Route::prefix('progression')
+    ->name('progression.')
+    ->middleware('can:social.progression.manage')
+    ->group(function () {
+        Route::get('/', [ProgressionRatingsController::class, 'index'])->name('index');
+        Route::post('/ratings', [ProgressionRatingsController::class, 'store'])->name('ratings.store');
+        Route::put('/ratings/{rating}', [ProgressionRatingsController::class, 'update'])->name('ratings.update');
+        Route::delete('/ratings/{rating}', [ProgressionRatingsController::class, 'destroy'])->name('ratings.destroy');
+
+        Route::get('/ratings/{rating}/thresholds', [ProgressionThresholdsController::class, 'index'])->name('thresholds.index');
+        Route::post('/ratings/{rating}/thresholds', [ProgressionThresholdsController::class, 'store'])->name('thresholds.store');
+        Route::put('/ratings/{rating}/thresholds/{threshold}', [ProgressionThresholdsController::class, 'update'])->name('thresholds.update');
+        Route::delete('/ratings/{rating}/thresholds/{threshold}', [ProgressionThresholdsController::class, 'destroy'])->name('thresholds.destroy');
+
+        Route::post('/thresholds/{threshold}/actions', [ProgressionThresholdActionsController::class, 'store'])->name('actions.store');
+        Route::put('/actions/{action}', [ProgressionThresholdActionsController::class, 'update'])->name('actions.update');
+        Route::delete('/actions/{action}', [ProgressionThresholdActionsController::class, 'destroy'])->name('actions.destroy');
+
+        Route::get('/ratings/{rating}/rules', [ProgressionRulesController::class, 'index'])->name('rules.index');
+        Route::post('/ratings/{rating}/rules', [ProgressionRulesController::class, 'store'])->name('rules.store');
+        Route::put('/rules/{rule}', [ProgressionRulesController::class, 'update'])->name('rules.update');
+        Route::delete('/rules/{rule}', [ProgressionRulesController::class, 'destroy'])->name('rules.destroy');
+    });
 
 Route::prefix('automation')
     ->name('automation.')

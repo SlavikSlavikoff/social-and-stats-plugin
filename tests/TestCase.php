@@ -4,13 +4,14 @@ namespace Azuriom\Plugin\InspiratoStats\Tests;
 
 use Azuriom\Models\Permission;
 use Azuriom\Plugin\InspiratoStats\Models\ApiToken;
+use Azuriom\Plugin\InspiratoStats\Tests\Concerns\CreatesUser;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Mockery;
 use Tests\TestCase as BaseTestCase;
-use Azuriom\Plugin\InspiratoStats\Tests\Concerns\CreatesUser;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -52,6 +53,7 @@ abstract class TestCase extends BaseTestCase
             'social.manage_tokens' => 'Manage social tokens',
             'social.moderate_violations' => 'Moderate violations',
             'social.automation.manage' => 'Manage automation settings',
+            'social.progression.manage' => 'Manage progression',
             'social.timelines.manage' => 'Manage timelines',
         ];
 
@@ -133,5 +135,11 @@ abstract class TestCase extends BaseTestCase
             $settings->set('socialprofile_automation_monthly_sources', $defaults['sources']);
             $settings->set('socialprofile_automation_monthly_reward', $defaults['reward']);
         }
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 }

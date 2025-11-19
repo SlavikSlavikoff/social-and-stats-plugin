@@ -1,32 +1,32 @@
-# Court integration points
+﻿# Точки интеграции модуля Court
 
-## Events & listeners
+## События и слушатели
 
 - `Azuriom\Plugin\InspiratoStats\Events\CourtDecisionChanged`
-  - Fired after every issue/update/revert.
-  - Carries the `CourtCase` instance and action name (`issued`, `reverted`, `updated`).
-- Listeners:
-  - `DispatchCourtWebhooks` — persists webhook deliveries (`socialprofile_court_webhook_deliveries`). Extend by adding more filters or enrich payload before storing.
-  - `ForwardCourtDecisionToIntegrations` — placeholder (see `docs/TODO.md#listeners`). Wire your Minecraft/Bot adapters here by pulling `event->case` and calling external APIs.
+  - Триггерится после любых `issue/update/revert`.
+  - Передаёт экземпляр `CourtCase` и действие (`issued`, `reverted`, `updated`).
+- Слушатели:
+  - `DispatchCourtWebhooks` — сохраняет доставку вебхуков в `socialprofile_court_webhook_deliveries`. Можно расширять фильтрами или обогащать полезную нагрузку перед записью.
+  - `ForwardCourtDecisionToIntegrations` — заглушка (см. `docs/TODO.md#listeners`). Здесь подключаются мосты в Minecraft/ботов: берите `$event->case` и обращайтесь к внешним API.
 
-## Scheduler contract
+## Контракт планировщика
 
-Run `php artisan socialprofile:court:tick` every 5 minutes (registered automatically via plugin schedule). It processes:
+Команда `php artisan socialprofile:court:tick` должна выполняться каждые 5 минут (в плагине уже зарегистрирована). Она обрабатывает:
 
-1. **Revert queue** — jobs in `socialprofile_court_revert_jobs` with `run_at <= now()`.
-   - Executes `CourtService::revertRoleAction`.
-   - Marks case `completed` when all actions are reverted.
-2. **Webhook queue** — `socialprofile_court_webhook_deliveries` with `status=pending` and due `next_attempt_at`.
-   - Sends POST with JSON payload + optional HMAC header.
-   - Retries with configurable backoff (`config('socialprofile.court.webhook.*')`).
+1. **Очередь откатов.** Строки `socialprofile_court_revert_jobs` с `run_at <= now()`.
+   - Вызывает `CourtService::revertRoleAction`.
+   - Переводит дело в `completed`, когда все действия возвращены.
+2. **Очередь вебхуков.** Записи `socialprofile_court_webhook_deliveries` со статусом `pending`, у которых наступил `next_attempt_at`.
+   - Отправляет POST с JSON и опциональной HMAC-подписью.
+   - Повторяет доставку с настраиваемым бэкофом (`config('socialprofile.court.webhook.*')`).
 
-To integrate with external schedulers (e.g., systemd, Azure WebJobs) call the artisan command directly; it is idempotent.
+Если используете внешний планировщик (systemd, Azure WebJobs и т. п.) — просто вызывайте artisan-команду, она идемпотентна.
 
-## Minecraft / Discord bridges
+## Мосты Minecraft / Discord
 
-1. Use the internal API (`POST /api/social/v1/court/cases`) with authenticated users or future bot tokens to register actions coming from game moderators.
-2. Listen to webhooks with events `issued`, `reverted`, `updated`. Provide the endpoint in the admin UI; payload includes case metadata plus condensed action info.
-3. For near-real-time updates inside the plugin, decorate `ForwardCourtDecisionToIntegrations`:
+1. Используйте внутренний API (`POST /api/social/v1/court/cases`) от имени авторизованных пользователей или будущих бот-токенов, чтобы фиксировать решения из игры.
+2. Подписывайтесь на вебхуки `issued`, `reverted`, `updated`. Укажите конечную точку в админке — тело запроса содержит полное описание дела и действий.
+3. Для онлайн-уведомлений внутри плагина декорируйте `ForwardCourtDecisionToIntegrations`:
    ```php
    Event::listen(CourtDecisionChanged::class, function ($event) {
        app(MinecraftBridge::class)->notify($event->case);
@@ -34,18 +34,18 @@ To integrate with external schedulers (e.g., systemd, Azure WebJobs) call the ar
    });
    ```
 
-## Attachments & evidence
+## Вложения и доказательства
 
-Currently the UI stores up to 3 URL attachments per case. Replace the storage logic in `CourtDecisionsController::storeAttachments` to push files to S3 or embed minio links, then expose them via the case API.
+Интерфейс сейчас хранит до трёх URL на дело. Если нужны загрузки файлов, переопределите `CourtDecisionsController::storeAttachments`, чтобы отправлять их в S3/MinIO, а ссылки отдавать через API.
 
-## Extending punishments
+## Расширение наказаний
 
-- Add new action types by extending `CourtAction` constants and the `match` in `CourtService::applyAction`.
-- Ensure the scheduler knows whether it must revert (update `shouldScheduleRevert`).
-- Add UI fields (Blade templates) and validation (controllers + `CourtService::normalizePayload`).
+- Добавляйте новые типы действий, расширяя константы `CourtAction` и `match` внутри `CourtService::applyAction`.
+- Сообщайте планировщику, нужно ли планировать откат (`shouldScheduleRevert`).
+- Расширяйте Интерфейс (Blade), валидацию (контроллеры + `CourtService::normalizePayload`).
 
-## Template refresh hook
+## Обновление шаблонов
 
-- The admin "Refresh from config" button triggers `CourtTemplateSeeder`, overwriting templates with matching keys using the payloads declared in `config/court.php`.
-- Custom keys (those not present in config) remain untouched, so you can safely keep bespoke templates alongside the defaults.
-- Clearing the `socialprofile_court_templates_seeded` setting and calling the seeder programmatically yields the same effect if you need to automate template syncs from deployments.
+- Кнопка «Refresh from config» вызывает `CourtTemplateSeeder`, перезаписывая шаблоны с совпадающими ключами данными из `config/court.php`.
+- Пользовательские ключи (которых нет в конфиге) не трогаются, поэтому можно держать корпоративные шаблоны рядом с дефолтами.
+- Эффект можно воспроизвести программно: очистите `socialprofile_court_templates_seeded` и вызовите сидер, если нужно синхронизировать шаблоны при деплое.

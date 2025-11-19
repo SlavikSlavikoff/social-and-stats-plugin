@@ -6,6 +6,7 @@ use Azuriom\Http\Controllers\Controller;
 use Azuriom\Models\User;
 use Azuriom\Plugin\InspiratoStats\Models\ApiToken;
 use Azuriom\Plugin\InspiratoStats\Support\ApiAccessContext;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -45,6 +46,28 @@ abstract class ApiController extends Controller
             || ($actor !== null && ($actor->can('social.edit') || $permissionAllowed || $actor->is($target)));
 
         return new ApiAccessContext($tokenAllowed ? $token : null, $hasFullAccess, $actor);
+    }
+
+    /**
+     * @template TModel of Model
+     *
+     * @param class-string<TModel> $model
+     * @param array<string, mixed> $defaults
+     * @return TModel
+     */
+    protected function metricOrNew(string $model, int $userId, array $defaults = []): Model
+    {
+        /** @var TModel|null $instance */
+        $instance = $model::where('user_id', $userId)->first();
+
+        if ($instance !== null) {
+            return $instance;
+        }
+
+        /** @var TModel $fallback */
+        $fallback = $model::make(array_merge(['user_id' => $userId], $defaults));
+
+        return $fallback;
     }
 
     protected function resourceResponse(JsonResource $resource): JsonResource

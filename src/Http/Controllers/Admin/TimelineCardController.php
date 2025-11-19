@@ -8,9 +8,9 @@ use Azuriom\Plugin\InspiratoStats\Http\Requests\TimelineCardRequest;
 use Azuriom\Plugin\InspiratoStats\Models\Timeline;
 use Azuriom\Plugin\InspiratoStats\Models\TimelineCard;
 use Azuriom\Plugin\InspiratoStats\Models\TimelinePeriod;
+use Azuriom\Plugin\InspiratoStats\Support\TimelineCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -51,6 +51,7 @@ class TimelineCardController extends Controller
         }
 
         $timeline->cards()->create($data);
+        TimelineCache::forgetForTimeline($timeline);
 
         return redirect()
             ->route('socialprofile.admin.timelines.edit', ['timeline' => $timeline, 'tab' => 'cards'])
@@ -82,6 +83,7 @@ class TimelineCardController extends Controller
         }
 
         $card->update($data);
+        TimelineCache::forgetForTimeline($timeline);
 
         return redirect()
             ->route('socialprofile.admin.timelines.edit', ['timeline' => $timeline, 'tab' => 'cards'])
@@ -93,6 +95,7 @@ class TimelineCardController extends Controller
         $this->ensureCard($timeline, $card);
         $this->deleteImage($card->image_path);
         $card->delete();
+        TimelineCache::forgetForTimeline($timeline);
 
         return redirect()
             ->route('socialprofile.admin.timelines.edit', ['timeline' => $timeline, 'tab' => 'cards'])
@@ -104,25 +107,42 @@ class TimelineCardController extends Controller
         $payload = collect($request->validated('items'));
         $cards = $timeline->cards()->get()->keyBy('id');
         $periods = $timeline->periods()->get()->keyBy('id');
+        $timestamp = now();
+        $records = [];
 
-        DB::transaction(function () use ($payload, $cards, $periods) {
-            foreach ($payload as $item) {
-                if (! isset($cards[$item['id']])) {
-                    continue;
-                }
-
-                if (! isset($periods[$item['period_id']])) {
-                    continue;
-                }
-
-                $cards[$item['id']]->update([
-                    'period_id' => $item['period_id'],
-                    'position' => $item['position'],
-                ]);
+        foreach ($payload as $item) {
+            if (! isset($cards[$item['id']], $periods[$item['period_id']])) {
+                continue;
             }
-        });
 
-        return response()->json(['status' => 'ok']);
+            $records[] = [
+                'id' => $item['id'],
+                'period_id' => $item['period_id'],
+                'position' => $item['position'],
+                'updated_at' => $timestamp,
+            ];
+        }
+
+        $updated = 0;
+
+        if ($records !== []) {
+            TimelineCard::withoutEvents(function () use ($records, &$updated): void {
+                foreach ($records as $record) {
+                    $updated += TimelineCard::whereKey($record['id'])->update([
+                        'period_id' => $record['period_id'],
+                        'position' => $record['position'],
+                        'updated_at' => $record['updated_at'],
+                    ]);
+                }
+            });
+
+            TimelineCache::forgetForTimeline($timeline);
+        }
+
+        return response()->json([
+            'status' => 'ok',
+            'updated' => $updated,
+        ]);
     }
 
     protected function prepareCardData(TimelineCardRequest $request): array
@@ -134,7 +154,16 @@ class TimelineCardController extends Controller
         /** @var Timeline $timeline */
         $timeline = $request->route('timeline');
         $nextPosition = ($timeline?->cards()->max('position') ?? 0) + 1;
-        $data['position'] = $data['position'] ?? $nextPosition;
+
+        /** @var TimelineCard|null $card */
+        $card = $request->route('card');
+
+        if (! isset($data['position'])) {
+            $data['position'] = $card instanceof TimelineCard
+                ? $card->position
+                : $nextPosition;
+        }
+
         $data['is_visible'] = $request->boolean('is_visible');
         $data['highlight'] = $request->boolean('highlight');
 

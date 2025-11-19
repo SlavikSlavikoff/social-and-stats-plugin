@@ -15,7 +15,9 @@ class TrustLevelController extends ApiController
     {
         $user = $this->resolveUser($nickname);
         $context = $this->access($request, 'trust:read', $user);
-        $trust = TrustLevel::firstOrCreate(['user_id' => $user->id]);
+        $trust = $this->metricOrNew(TrustLevel::class, $user->id, [
+            'level' => TrustLevel::LEVELS[0],
+        ]);
 
         return $this->resourceResponse(TrustLevelResource::makeWithAccess($trust, $context->hasFullAccess));
     }

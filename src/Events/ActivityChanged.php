@@ -12,7 +12,10 @@ class ActivityChanged
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public User $user, public ActivityPoint $activity)
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function __construct(public User $user, public ActivityPoint $activity, public array $context = [])
     {
     }
 }

@@ -19,11 +19,19 @@ class BundleController extends ApiController
 
         $data = [
             'user' => $user,
-            'social_score' => SocialScore::firstOrCreate(['user_id' => $user->id]),
-            'activity' => ActivityPoint::firstOrCreate(['user_id' => $user->id]),
-            'coins' => CoinBalance::firstOrCreate(['user_id' => $user->id]),
-            'trust' => TrustLevel::firstOrCreate(['user_id' => $user->id]),
-            'stats' => GameStatistic::firstOrCreate(['user_id' => $user->id]),
+            'social_score' => $this->metricOrNew(SocialScore::class, $user->id, ['score' => 0]),
+            'activity' => $this->metricOrNew(ActivityPoint::class, $user->id, ['points' => 0]),
+            'coins' => $this->metricOrNew(CoinBalance::class, $user->id, [
+                'balance' => 0,
+                'hold' => 0,
+            ]),
+            'trust' => $this->metricOrNew(TrustLevel::class, $user->id, ['level' => TrustLevel::LEVELS[0]]),
+            'stats' => $this->metricOrNew(GameStatistic::class, $user->id, [
+                'played_minutes' => 0,
+                'kills' => 0,
+                'deaths' => 0,
+                'extra_metrics' => [],
+            ]),
         ];
 
         return $this->resourceResponse(BundleResource::makeWithAccess($data, $context->hasFullAccess));

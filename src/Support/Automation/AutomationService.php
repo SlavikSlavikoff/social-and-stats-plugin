@@ -63,7 +63,7 @@ class AutomationService
         $this->dispatchRules(AutomationRule::TRIGGER_ACTIVITY_CHANGED, $payload, ['user' => $user]);
     }
 
-    public function handleCoinsChanged(User $user, CoinBalance $coins, ?string $context = null): void
+    public function handleCoinsChanged(User $user, CoinBalance $coins, array|string|null $context = null): void
     {
         $payload = [
             'user_id' => $user->id,

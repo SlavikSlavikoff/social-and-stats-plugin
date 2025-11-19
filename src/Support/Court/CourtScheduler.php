@@ -2,7 +2,6 @@
 
 namespace Azuriom\Plugin\InspiratoStats\Support\Court;
 
-use Azuriom\Models\User;
 use Azuriom\Plugin\InspiratoStats\Models\CourtAction;
 use Azuriom\Plugin\InspiratoStats\Models\CourtCase;
 use Azuriom\Plugin\InspiratoStats\Models\CourtRevertJob;
@@ -27,6 +26,7 @@ class CourtScheduler
     {
         CourtRevertJob::where('status', CourtRevertJob::STATUS_PENDING)
             ->where('run_at', '<=', now())
+            ->with(['action.courtCase.actions', 'action.courtCase.subject'])
             ->orderBy('id')
             ->limit(25)
             ->get()
@@ -36,16 +36,17 @@ class CourtScheduler
 
                 try {
                     DB::transaction(function () use ($job) {
-                        $action = CourtAction::with(['courtCase'])->find($job->action_id);
-                        if (! $action || ! $action->courtCase) {
+                        $action = $job->action;
+                        $case = $action?->courtCase;
+                        $subject = $case?->subject;
+
+                        if (! $action || ! $case) {
                             $job->status = CourtRevertJob::STATUS_FAILED;
                             $job->last_error = 'action missing';
                             $job->save();
 
                             return;
                         }
-
-                        $subject = User::find($action->courtCase->user_id);
 
                         if (! $subject) {
                             $job->status = CourtRevertJob::STATUS_FAILED;
@@ -56,14 +57,19 @@ class CourtScheduler
                         }
 
                         $this->service->revertRoleAction($action, $subject);
+                        $case->actions->each(function (CourtAction $caseAction) use ($action): void {
+                            if ($caseAction->id === $action->id) {
+                                $caseAction->status = 'reverted';
+                            }
+                        });
 
                         $job->status = CourtRevertJob::STATUS_COMPLETED;
                         $job->save();
 
-                        if ($action->courtCase->actions()->where('status', '!=', 'reverted')->count() === 0) {
-                            $action->courtCase->status = CourtCase::STATUS_COMPLETED;
-                            $action->courtCase->finalized_at = now();
-                            $action->courtCase->save();
+                        if ($case->actions->firstWhere('status', '!=', 'reverted') === null) {
+                            $case->status = CourtCase::STATUS_COMPLETED;
+                            $case->finalized_at = now();
+                            $case->save();
                         }
                     });
                 } catch (\Throwable $exception) {

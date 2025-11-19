@@ -9,6 +9,7 @@ use Azuriom\Plugin\InspiratoStats\Models\CoinBalance;
 use Azuriom\Plugin\InspiratoStats\Models\SocialScore;
 use Azuriom\Plugin\InspiratoStats\Support\Automation\Clients\MinecraftRconClient;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -21,6 +22,21 @@ class AutomationActionExecutor
      * @var array<int, AutomationIntegration|null>
      */
     protected array $integrationCache = [];
+
+    /**
+     * @var array<int, array{client: MinecraftRconClient, hash: string}>
+     */
+    protected array $rconClients = [];
+
+    /**
+     * @var array<int, array{connection: ConnectionInterface, hash: string, name: string}>
+     */
+    protected array $databaseConnections = [];
+
+    /**
+     * @var array<int, \Illuminate\Http\Client\PendingRequest>
+     */
+    protected array $httpClients = [];
 
     /**
      * @param array<int, array<string, mixed>> $actions
@@ -130,12 +146,7 @@ class AutomationActionExecutor
         }
 
         $command = $this->renderTemplate($commandTemplate, $payload);
-        $client = new MinecraftRconClient(
-            (string) $integration->configValue('host'),
-            (int) $integration->configValue('port', 25575),
-            (string) $integration->configValue('password', ''),
-            (int) $integration->configValue('timeout', 5)
-        );
+        $client = $this->rconClient($integration);
 
         $response = $client->sendCommand($command);
 
@@ -160,10 +171,8 @@ class AutomationActionExecutor
         }
 
         $query = $this->renderTemplate($queryTemplate, $payload);
-
-        $affected = $this->usingTemporaryConnection($integration, function (ConnectionInterface $connection) use ($query) {
-            return $connection->affectingStatement($query);
-        });
+        $connection = $this->databaseConnection($integration);
+        $affected = $connection->affectingStatement($query);
 
         return [
             'summary' => sprintf('SQL выполнен, изменено строк: %d', $affected),
@@ -186,11 +195,14 @@ class AutomationActionExecutor
         $format = $config['format'] ?? 'json';
         $timeout = (int) ($config['timeout'] ?? 10);
         $headers = $this->buildHeaders($integration, $config);
+        $request = $this->httpClient($integration, ['timeout' => $timeout]);
 
-        $request = Http::timeout($timeout)->withHeaders($headers);
+        if ($headers !== []) {
+            $request = $request->withHeaders($headers);
+        }
 
-        if ($token = $integration?->configValue('token')) {
-            $request = $request->withToken($token);
+        if (($config['token'] ?? null) !== null) {
+            $request = $request->withToken($config['token']);
         }
 
         $options = [];
@@ -319,34 +331,96 @@ class AutomationActionExecutor
         return strtr($template, $replacements);
     }
 
-    protected function usingTemporaryConnection(AutomationIntegration $integration, callable $callback): mixed
+    protected function rconClient(AutomationIntegration $integration): MinecraftRconClient
     {
-        $connectionName = 'automation_'.$integration->id.'_'.Str::random(5);
+        $config = [
+            'host' => (string) $integration->configValue('host', ''),
+            'port' => (int) $integration->configValue('port', 25575),
+            'password' => (string) $integration->configValue('password', ''),
+            'timeout' => (int) $integration->configValue('timeout', 5),
+        ];
+        $hash = md5(json_encode($config));
+        $key = $integration->id;
+
+        if (! isset($this->rconClients[$key]) || $this->rconClients[$key]['hash'] !== $hash) {
+            $this->rconClients[$key] = [
+                'hash' => $hash,
+                'client' => new MinecraftRconClient(
+                    $config['host'],
+                    $config['port'],
+                    $config['password'],
+                    $config['timeout']
+                ),
+            ];
+        }
+
+        return $this->rconClients[$key]['client'];
+    }
+
+    protected function databaseConnection(AutomationIntegration $integration): ConnectionInterface
+    {
         $config = $integration->config ?? [];
+        $hash = md5(json_encode($config));
+        $key = $integration->id;
 
-        config([
-            'database.connections.'.$connectionName => [
-                'driver' => $config['driver'] ?? 'mysql',
-                'host' => $config['host'] ?? '127.0.0.1',
-                'port' => $config['port'] ?? 3306,
-                'database' => $config['database'] ?? '',
-                'username' => $config['username'] ?? '',
-                'password' => $config['password'] ?? '',
-                'charset' => $config['charset'] ?? 'utf8mb4',
-                'collation' => $config['collation'] ?? 'utf8mb4_unicode_ci',
-                'prefix' => $config['prefix'] ?? '',
-            ],
-        ]);
+        if (! isset($this->databaseConnections[$key]) || $this->databaseConnections[$key]['hash'] !== $hash) {
+            $connectionName = 'automation_'.$integration->id;
 
-        try {
+            config([
+                'database.connections.'.$connectionName => [
+                    'driver' => $config['driver'] ?? 'mysql',
+                    'host' => $config['host'] ?? '127.0.0.1',
+                    'port' => $config['port'] ?? 3306,
+                    'database' => $config['database'] ?? '',
+                    'username' => $config['username'] ?? '',
+                    'password' => $config['password'] ?? '',
+                    'charset' => $config['charset'] ?? 'utf8mb4',
+                    'collation' => $config['collation'] ?? 'utf8mb4_unicode_ci',
+                    'prefix' => $config['prefix'] ?? '',
+                ],
+            ]);
+
+            DB::purge($connectionName);
             $connection = DB::connection($connectionName);
             $connection->getPdo();
 
-            return $callback($connection);
-        } finally {
-            DB::purge($connectionName);
-            config()->offsetUnset('database.connections.'.$connectionName);
+            $this->databaseConnections[$key] = [
+                'connection' => $connection,
+                'hash' => $hash,
+                'name' => $connectionName,
+            ];
         }
+
+        return $this->databaseConnections[$key]['connection'];
+    }
+
+    protected function httpClient(?AutomationIntegration $integration, array $config = []): PendingRequest
+    {
+        $timeout = (int) ($config['timeout'] ?? 10);
+
+        if ($integration === null) {
+            return Http::timeout($timeout);
+        }
+
+        $key = $integration->id;
+
+        if (! isset($this->httpClients[$key])) {
+            $base = Http::timeout((int) $integration->configValue('timeout', $timeout));
+
+            if ($token = $integration->configValue('token')) {
+                $base = $base->withToken($token);
+            }
+
+            if ($baseUrl = $integration->configValue('base_url')) {
+                $base = $base->baseUrl($baseUrl);
+            }
+
+            $this->httpClients[$key] = $base;
+        }
+
+        $client = clone $this->httpClients[$key];
+
+        return $client->timeout($timeout);
     }
 
     /**
@@ -385,13 +459,7 @@ class AutomationActionExecutor
 
     protected function testRcon(AutomationIntegration $integration): array
     {
-        $client = new MinecraftRconClient(
-            (string) $integration->configValue('host'),
-            (int) $integration->configValue('port', 25575),
-            (string) $integration->configValue('password', ''),
-            (int) $integration->configValue('timeout', 5)
-        );
-
+        $client = $this->rconClient($integration);
         $client->sendCommand('list');
 
         return ['message' => 'Соединение RCON успешно.'];
@@ -399,9 +467,8 @@ class AutomationActionExecutor
 
     protected function testDatabase(AutomationIntegration $integration): array
     {
-        $result = $this->usingTemporaryConnection($integration, function (ConnectionInterface $connection) {
-            return $connection->select('SELECT 1 as ping');
-        });
+        $connection = $this->databaseConnection($integration);
+        $result = $connection->select('SELECT 1 as ping');
 
         return ['message' => 'Подключение к базе установлено.', 'result' => $result];
     }
@@ -414,7 +481,7 @@ class AutomationActionExecutor
             throw new RuntimeException('Укажите URL бота для проверки.');
         }
 
-        $response = Http::timeout(5)->get($baseUrl);
+        $response = $this->httpClient($integration, ['timeout' => 5])->get($baseUrl);
 
         return ['message' => 'Запрос отправлен.', 'status_code' => $response->status()];
     }

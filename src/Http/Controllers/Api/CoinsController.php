@@ -16,7 +16,10 @@ class CoinsController extends ApiController
     {
         $user = $this->resolveUser($nickname);
         $context = $this->access($request, 'coins:read', $user);
-        $coins = CoinBalance::firstOrCreate(['user_id' => $user->id]);
+        $coins = $this->metricOrNew(CoinBalance::class, $user->id, [
+            'balance' => 0,
+            'hold' => 0,
+        ]);
         $canViewBalance = (bool) setting('socialprofile_show_coins_public', true);
 
         return $this->resourceResponse(
@@ -30,15 +33,20 @@ class CoinsController extends ApiController
         $context = $this->access($request, 'coins:write', $user, true);
         $payload = $request->validated();
 
-        $coins = DB::transaction(function () use ($user, $payload) {
+        [$coins, $delta] = DB::transaction(function () use ($user, $payload) {
             $coins = CoinBalance::lockForUpdate()->firstOrCreate(['user_id' => $user->id]);
+            $before = (float) $coins->balance;
             $coins->fill($payload);
             $coins->save();
 
-            return $coins;
+            return [$coins, (float) $coins->balance - $before];
         });
 
-        event(new CoinsChanged($user, $coins));
+        event(new CoinsChanged($user, $coins, [
+            'delta' => $delta,
+            'source' => 'api',
+            'payload' => $payload,
+        ]));
 
         ActionLogger::log('socialprofile.coins.updated', [
             'user_id' => $user->id,

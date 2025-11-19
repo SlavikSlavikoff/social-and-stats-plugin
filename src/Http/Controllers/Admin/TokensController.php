@@ -30,6 +30,8 @@ class TokensController extends Controller
         'verify:read',
         'verify:write',
         'bundle:read',
+        'progression:read',
+        'progression:write',
     ];
 
     public function index()

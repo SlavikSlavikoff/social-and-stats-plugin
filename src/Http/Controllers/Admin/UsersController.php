@@ -6,6 +6,7 @@ use Azuriom\Http\Controllers\Controller;
 use Azuriom\Models\User;
 use Azuriom\Plugin\InspiratoStats\Events\ActivityChanged;
 use Azuriom\Plugin\InspiratoStats\Events\CoinsChanged;
+use Azuriom\Plugin\InspiratoStats\Events\SocialScoreChanged;
 use Azuriom\Plugin\InspiratoStats\Events\SocialStatsUpdated;
 use Azuriom\Plugin\InspiratoStats\Events\TrustLevelChanged;
 use Azuriom\Plugin\InspiratoStats\Http\Requests\UpdateTrustLevelRequest;
@@ -80,32 +81,68 @@ class UsersController extends Controller
             'deaths' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        [$activity, $coins, $stats] = DB::transaction(function () use ($user, $validated) {
-            $score = SocialScore::firstOrCreate(['user_id' => $user->id]);
+        [$score, $activity, $coins, $stats, $deltas] = DB::transaction(function () use ($user, $validated) {
+            $score = SocialScore::lockForUpdate()->firstOrCreate(['user_id' => $user->id]);
+            $scoreBefore = (int) $score->score;
             $score->update(['score' => $validated['score']]);
 
-            $activity = ActivityPoint::firstOrCreate(['user_id' => $user->id]);
+            $activity = ActivityPoint::lockForUpdate()->firstOrCreate(['user_id' => $user->id]);
+            $activityBefore = (int) $activity->points;
             $activity->update(['points' => $validated['activity']]);
 
             $coins = CoinBalance::lockForUpdate()->firstOrCreate(['user_id' => $user->id]);
+            $coinsBefore = (float) $coins->balance;
             $coins->update([
                 'balance' => $validated['balance'],
                 'hold' => $validated['hold'] ?? null,
             ]);
 
-            $stats = GameStatistic::firstOrCreate(['user_id' => $user->id]);
+            $stats = GameStatistic::lockForUpdate()->firstOrCreate(['user_id' => $user->id]);
+            $statsBefore = $stats->only(['played_minutes', 'kills', 'deaths']);
             $stats->update([
                 'played_minutes' => $validated['played_minutes'],
                 'kills' => $validated['kills'] ?? 0,
                 'deaths' => $validated['deaths'] ?? 0,
             ]);
 
-            return [$activity, $coins, $stats];
+            return [
+                $score,
+                $activity,
+                $coins,
+                $stats,
+                [
+                    'score' => $validated['score'] - $scoreBefore,
+                    'activity' => $validated['activity'] - $activityBefore,
+                    'coins' => $validated['balance'] - $coinsBefore,
+                    'stats' => [
+                        'played_minutes' => $validated['played_minutes'] - ($statsBefore['played_minutes'] ?? 0),
+                        'kills' => ($validated['kills'] ?? 0) - ($statsBefore['kills'] ?? 0),
+                        'deaths' => ($validated['deaths'] ?? 0) - ($statsBefore['deaths'] ?? 0),
+                    ],
+                ],
+            ];
         });
 
-        event(new SocialStatsUpdated($user, $stats));
-        event(new ActivityChanged($user, $activity));
-        event(new CoinsChanged($user, $coins));
+        event(new SocialScoreChanged($user, $score, [
+            'delta' => $deltas['score'],
+            'source' => 'admin.manual',
+        ]));
+
+        event(new SocialStatsUpdated($user, $stats, [
+            'values' => $stats->only(['played_minutes', 'kills', 'deaths']),
+            'delta' => $deltas['stats'],
+            'source' => 'admin.manual',
+        ]));
+
+        event(new ActivityChanged($user, $activity, [
+            'delta' => $deltas['activity'],
+            'source' => 'admin.manual',
+        ]));
+
+        event(new CoinsChanged($user, $coins, [
+            'delta' => $deltas['coins'],
+            'source' => 'admin.manual',
+        ]));
 
         ActionLogger::log('socialprofile.admin.metrics.updated', [
             'user_id' => $user->id,
@@ -123,7 +160,9 @@ class UsersController extends Controller
         $trust->granted_by = auth()->id();
         $trust->save();
 
-        event(new TrustLevelChanged($user, $trust, $oldLevel, $trust->level, auth()->user()));
+        event(new TrustLevelChanged($user, $trust, $oldLevel, $trust->level, auth()->user(), [
+            'source' => 'admin.manual',
+        ]));
 
         ActionLogger::log('socialprofile.admin.trust.updated', [
             'user_id' => $user->id,

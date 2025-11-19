@@ -37,13 +37,21 @@
     </div>
 </form>
 
-@if($periods->isEmpty())
+@php($renderPeriods = $visiblePeriods ?? $periods)
+
+@if(($limitedPeriods ?? false) && ($renderPeriods->count() !== $periods->count()))
+    <div class="alert alert-info">
+        {{ __('socialprofile::messages.admin.timelines.cards.limited_notice') }}
+    </div>
+@endif
+
+@if($renderPeriods->isEmpty())
     <div class="alert alert-warning">
         {{ __('socialprofile::messages.admin.timelines.cards.no_periods_warning') }}
     </div>
 @else
     <div class="timeline-card-board" data-card-sortable data-order-endpoint="{{ route('socialprofile.admin.timelines.cards.order', $timeline) }}" data-order-error="{{ __('socialprofile::messages.admin.timelines.order_failed') }}">
-        @foreach($periods as $period)
+        @foreach($renderPeriods as $period)
             <div class="timeline-card-column">
                 <div class="timeline-card-column-header d-flex justify-content-between align-items-center">
                     <div>

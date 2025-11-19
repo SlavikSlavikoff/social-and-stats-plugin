@@ -12,7 +12,10 @@ class SocialStatsUpdated
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public User $user, public GameStatistic $statistics)
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function __construct(public User $user, public GameStatistic $statistics, public array $context = [])
     {
     }
 }

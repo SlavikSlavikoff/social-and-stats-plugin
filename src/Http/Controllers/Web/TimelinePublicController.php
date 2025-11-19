@@ -4,6 +4,7 @@ namespace Azuriom\Plugin\InspiratoStats\Http\Controllers\Web;
 
 use Azuriom\Http\Controllers\Controller;
 use Azuriom\Plugin\InspiratoStats\Models\Timeline;
+use Azuriom\Plugin\InspiratoStats\Support\TimelineCache;
 use Illuminate\View\View;
 
 class TimelinePublicController extends Controller
@@ -20,15 +21,17 @@ class TimelinePublicController extends Controller
 
     protected function showTimeline(string $type, string $view): View
     {
-        $timeline = Timeline::query()
-            ->type($type)
-            ->active()
-            ->with(['periods' => function ($query) {
-                $query->orderBy('position')->with(['cards' => function ($cardQuery) {
-                    $cardQuery->where('is_visible', true)->orderBy('position');
-                }]);
-            }])
-            ->first();
+        $timeline = TimelineCache::remember($type, function () use ($type) {
+            return Timeline::query()
+                ->type($type)
+                ->active()
+                ->with(['periods' => function ($query) {
+                    $query->orderBy('position')->with(['cards' => function ($cardQuery) {
+                        $cardQuery->where('is_visible', true)->orderBy('position');
+                    }]);
+                }])
+                ->first();
+        });
 
         return view("socialprofile::timelines.$view", [
             'timeline' => $timeline,

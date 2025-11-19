@@ -88,3 +88,192 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
+
+.progression-list .progression-entry {
+    position: relative;
+}
+
+.progression-bar {
+    background-color: rgba(0, 0, 0, 0.08);
+    height: 0.6rem;
+    border-radius: var(--bs-border-radius-pill);
+    overflow: hidden;
+}
+
+[data-bs-theme="dark"] .progression-bar {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.progression-bar .progress-bar {
+    background-image: linear-gradient(90deg, var(--bs-primary) 0%, var(--bs-primary) 100%);
+}
+
+.progression-markers {
+    position: relative;
+    height: 0;
+}
+
+.progression-markers .marker {
+    position: absolute;
+    top: -0.35rem;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background-color: var(--bs-border-color);
+    border: 2px solid var(--bs-body-bg);
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.progression-markers .marker.reached {
+    background-color: var(--bs-primary);
+}
+
+.profile-card .profile-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.profile-card .profile-stat-grid .label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary-color);
+}
+
+.profile-card .profile-stat-grid .value {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--bs-body-color);
+}
+
+.progression-vertical-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.progression-vertical-bar {
+    position: relative;
+    width: 120px;
+    height: 300px;
+    border-radius: 999px;
+    border: 1px solid var(--bs-border-color);
+    background: linear-gradient(180deg, rgba(56, 178, 172, 0.1), rgba(56, 178, 172, 0.02));
+    overflow: hidden;
+}
+
+.progression-vertical-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: linear-gradient(180deg, var(--bs-primary), var(--bs-primary));
+    border-radius: inherit;
+}
+
+.progression-marker {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
+.progression-marker::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: var(--bs-border-color);
+}
+
+.progression-marker .marker-value {
+    display: inline-block;
+    margin-top: 0.2rem;
+    padding: 0.05rem 0.35rem;
+    font-size: 0.7rem;
+    border-radius: var(--bs-border-radius-pill);
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+}
+
+.progression-marker.reached::before {
+    background-color: var(--bs-primary);
+}
+
+.progression-marker.reached .marker-value {
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+}
+
+.progression-marker.punishment::before {
+    background-color: var(--bs-danger);
+}
+
+.progression-marker.punishment .marker-value {
+    border-color: var(--bs-danger);
+    color: var(--bs-danger);
+}
+
+.progression-marker.punishment.active::before {
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.35);
+}
+
+.progression-current {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    background-color: var(--bs-primary);
+    color: #fff;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--bs-border-radius-pill);
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.2);
+}
+
+.progression-extreme {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--bs-border-radius-pill);
+    background-color: rgba(220, 53, 69, 0.12);
+    color: var(--bs-danger);
+}
+
+.progression-extreme-top {
+    top: 0.35rem;
+}
+
+.progression-extreme-bottom {
+    bottom: 0.35rem;
+}
+
+.progression-threshold-list li {
+    border-bottom: 1px solid var(--bs-border-color);
+    padding-bottom: 0.75rem;
+}
+
+.progression-threshold-list li.reached strong {
+    color: var(--bs-primary);
+}
+
+.progression-threshold-list li.punishment {
+    border-left: 3px solid rgba(220, 53, 69, 0.2);
+    padding-left: 0.75rem;
+}
+
+.progression-threshold-list li.punishment-active strong {
+    color: var(--bs-danger);
+}
+
+.wallet-balance {
+    line-height: 1.1;
+}

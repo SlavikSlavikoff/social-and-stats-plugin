@@ -1,74 +1,74 @@
-# Court module overview
+﻿# Обзор модуля Court
 
-## Purpose
+## Назначение
 
-The «Суд» module formalises the complete lifecycle of moderation decisions inside the Inspirato Azuriom plugin. It brings configurable punishment templates, manual decisions, audit history, listeners, webhook notifications, and a recoverable scheduler that can undo time-based role swaps (ban/mute).
+Модуль «Суд» формализует полный жизненный цикл модераторских решений внутри плагина Inspirato для Azuriom. Он даёт настраиваемые шаблоны наказаний, ручные решения, историю аудита, слушателей, уведомления по вебхукам и отказоустойчивый планировщик, который способен откатывать ротацию ролей (ban/mute).
 
-## Core concepts
+## Базовые сущности
 
-- **Case** — a judicial record that references the subject (player), judge, executor channel (currently always `site`), template (optional) and current status.
-- **Action** — a concrete effect linked to a case (metric delta, ban, mute, role switch, note). Actions can schedule automatic reverts.
-- **Template** — predefined payload with deltas, ban/mute durations and base comments. Stored in DB (`socialprofile_court_templates`) and editable from the admin UI.
-- **Revert ticket** — queued job describing what to restore when a timed action expires.
-- **Log** — append-only audit trail for each case; backed by DB + webhook deliveries for external consumers.
+- **Дело** (`CourtCase`) — запись о деле: игрок, судья, канал исполнителя (пока `site`), выбранный шаблон (опционально) и текущий статус.
+- **Действие** (`CourtAction`) — конкретный эффект внутри дела (изменение метрик, бан, мут, смена роли, заметка). Может планировать автоматический откат.
+- **Шаблон** — заранее заданный набор данных с дельтами, длительностями бан/мут и базовым комментарием. Хранится в `socialprofile_court_templates` и редактируется из админки.
+- **Задача отката** — отложенное задание, описывающее, что восстановить после истечения таймера.
+- **Журнал** — история по каждому делу, поддерживаемая БД и вебхуками.
 
-## Lifecycle & statuses
+## Жизненный цикл и статусы
 
-1. Judge opens the Court page (permission `social.court.judge`).
-2. They pick **Auto** (template) or **Manual** mode.
-3. Service validates limits, ensures ban/mute roles configured, and persists the case with `status=active`.
-4. Each action is applied immediately; role changes capture a snapshot and optionally queue reverts (ban/mute/role).
-5. Scheduler (`socialprofile:court:tick`) watches `socialprofile_court_revert_jobs` and `socialprofile_court_webhook_deliveries` to undo roles and flush webhooks.
-6. Case status transitions:
-   - `issued` → `active` once actions were stored
-   - `awaiting_revert` when timers exist
-   - `completed` after all actions reverted
-   - `cancelled`/`revoked` via future cancellation flows
+1. Судья открывает `/court/judge` (право `social.court.judge`).
+2. Выбирает режим **Auto** (шаблон) или **Manual**.
+3. Сервис проверяет лимиты, настройки ролей для бан/мут и создаёт дело со статусом `active`.
+4. Каждое действие применяется сразу; смена ролей сохраняет снапшот и при необходимости ставит задачи на откат.
+5. Планировщик (`socialprofile:court:tick`) следит за `socialprofile_court_revert_jobs` и `socialprofile_court_webhook_deliveries`, чтобы вернуть роли и доставить вебхуки.
+6. Переходы статусов:
+   - `issued` → `active` после записи действий;
+   - `awaiting_revert`, если есть таймеры;
+   - `completed` после отката всех действий;
+   - `cancelled`/`revoked` — сценарии будущих отмен.
 
-## Database summary
+## Таблицы БД
 
-| Table | Purpose |
-|-------|---------|
-| `socialprofile_court_templates` | Configurable templates with payload JSON and limits |
-| `socialprofile_court_cases` | Case metadata, statuses, relationships, indices on `user_id`, `judge_id`, `status`, `created_at`, `expires_at` |
-| `socialprofile_court_actions` | Punishment actions (ban/mute/metrics/role) and timers |
-| `socialprofile_court_state_snapshots` | Stored previous roles for safe revert |
-| `socialprofile_court_revert_jobs` | Scheduler queue for expirations |
-| `socialprofile_court_logs` | Fine-grained audit history |
-| `socialprofile_court_attachments` | Evidence links |
-| `socialprofile_court_webhooks` / `_deliveries` | Outbound notifications and retry queue |
+| Таблица | Назначение |
+|--------|------------|
+| `socialprofile_court_templates` | Настраиваемые шаблоны с набором данных и лимитами |
+| `socialprofile_court_cases` | Метаданные дела, статусы, связи; индексы по `user_id`, `judge_id`, `status`, `created_at`, `expires_at` |
+| `socialprofile_court_actions` | Действия (бан/мут/метрики/роль) и таймеры |
+| `socialprofile_court_state_snapshots` | Сохранённые предыдущие роли для безопасного отката |
+| `socialprofile_court_revert_jobs` | Очередь планировщика для истечений |
+| `socialprofile_court_logs` | Подробная история | 
+| `socialprofile_court_attachments` | Ссылки на доказательства |
+| `socialprofile_court_webhooks` / `_deliveries` | Конфигурация вебхуков и очередь доставок |
 
-## UI & permissions
+## UI и права
 
-- **/court/judge** – рабочее место судьи. Доступно авторизованным пользователям с правом `social.court.judge`, работает вне админки и содержит оба режима (авто/ручной) + быстрый список дел.
-- **Admin > Court** – стартовая точка с поиском и ссылкой в архив.
-- **Admin > Court > Archive** – пагинация дел (право `social.court.archive`).
-- **Admin > Court > Settings** – роли, лимиты, вебхуки (права `social.court.manage_settings` / `social.court.webhooks`).
-- **Admin > Court > Templates** – отдельная страница редактирования шаблонов + “Refresh from config”.
-- **/court** – публичный список решений (чтение при праве `social.court.archive`).
+- **/court/judge** — рабочее место судьи. Доступно авторизованным пользователям с правом `social.court.judge`, работает вне админки и включает оба режима плюс список дел.
+- **Admin → Court** — входная точка с поиском и ссылкой на архив.
+- **Admin → Court → Archive** — пагинация дел (право `social.court.archive`).
+- **Admin → Court → Settings** — роли, лимиты, вебхуки (права `social.court.manage_settings` / `social.court.webhooks`).
+- **Admin → Court → Templates** — отдельная страница редактирования шаблонов и кнопка «Refresh from config».
+- **/court** — публичный список решений (чтение при праве `social.court.archive`).
 
-## Template management
+## Управление шаблонами
 
-- Templates live in DB (`socialprofile_court_templates`) but can be edited from the new admin screen.
-- Each template exposes editable fields (name, key, base comment, payload JSON, activity flag).
-- The refresh button wipes cached defaults (`setting('socialprofile_court_templates_seeded')`) and re-seeds from `config/court.php`.
-- Deleting a template only prevents future auto cases; existing cases keep their template_id for audit.
+- Шаблоны живут в БД (`socialprofile_court_templates`) и редактируются через новую страницу админки.
+- В форме доступны поля имени, key, базового комментария, JSON-набора данных и флага активности.
+- Кнопка обновления сбрасывает `setting('socialprofile_court_templates_seeded')` и повторно импортирует данные из `config/court.php`.
+- Удаление шаблона блокирует только будущие авто-дела; существующие записи сохраняют `template_id` для аудита.
 
-## Scheduling & listeners
+## Планировщик и слушатели
 
-- `RunCourtScheduler` command registered + scheduled every 5 minutes.
-- Event `CourtDecisionChanged` notifies:
-  - `DispatchCourtWebhooks` — enqueues webhook deliveries and retries with exponential fallback.
-  - `ForwardCourtDecisionToIntegrations` — placeholder listener (see `docs/TODO.md#listeners`) for Minecraft/bot bridges.
+- Зарегистрирована команда `RunCourtScheduler`, запускаемая каждые 5 минут.
+- Событие `CourtDecisionChanged` уведомляет:
+  - `DispatchCourtWebhooks` — ставит доставки в очередь и повторяет с экспоненциальной задержкой;
+  - `ForwardCourtDecisionToIntegrations` — заглушка под интеграции (см. `docs/TODO.md#listeners`).
 
-## Testing strategy
+## Стратегия тестирования
 
-- Unit — `CourtServiceTest` validates metric deltas + timers.
-- Feature — Admin form submission, API JSON, web visibility, scheduler revert.
-- Policy — see `tests/Feature/Http/Web/CourtControllerTest.php`.
-- Scheduler — `CourtSchedulerTest` covers cron-safe idempotency.
+- Unit-тесты — `CourtServiceTest` проверяет дельты метрик и таймеры.
+- Feature-тесты — формы админки, JSON API, публичные страницы, логика отката.
+- Policy-тесты — `tests/Feature/Http/Web/CourtControllerTest.php`.
+- Тесты планировщика — `CourtSchedulerTest` подтверждает идемпотентность cron.
 
-## Next steps
+## Следующие шаги
 
-- Wire integrations into the placeholder listener once Minecraft/bot endpoints are approved.
-- Expand attachments to handle uploads instead of URLs.
+- Подключить реальные интеграции к placeholder-слушателю, когда будут готовы эндпоинты Minecraft/ботов.
+- Расширить поддержку вложений для загрузки файлов, а не только URL.
